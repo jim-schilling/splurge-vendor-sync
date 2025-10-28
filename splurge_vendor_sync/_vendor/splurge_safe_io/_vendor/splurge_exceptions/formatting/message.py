@@ -6,7 +6,7 @@ with context, suggestions, and metadata in a readable way.
 
 from typing import Any
 
-from splurge_exceptions import SplurgeError
+from .. import SplurgeError
 
 
 class ErrorMessageFormatter:

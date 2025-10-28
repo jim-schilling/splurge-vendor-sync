@@ -9,7 +9,7 @@ It simply forwards execution to :func:`splurge_exceptions.cli.main`.
 
 import sys
 
-from splurge_exceptions.cli import main
+from .cli import main
 
 if __name__ == "__main__":
     sys.exit(main())

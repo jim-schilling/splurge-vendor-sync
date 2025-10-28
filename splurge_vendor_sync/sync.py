@@ -12,32 +12,47 @@ from __future__ import annotations
 import logging
 import shutil
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
-from splurge_vendor_sync._vendor.splurge_safe_io.path_validator import PathValidator
-from splurge_vendor_sync._vendor.splurge_safe_io.safe_text_file_reader import (
-    SafeTextFileReader,
-)
-from splurge_vendor_sync._vendor.splurge_safe_io.safe_text_file_writer import (
-    SafeTextFileWriter,
-    TextFileWriteMode,
-)
 from splurge_vendor_sync._vendor.splurge_safe_io.exceptions import (
     SplurgeSafeIoError,
-    SplurgeSafeIoFileNotFoundError,
     SplurgeSafeIoPathValidationError,
-    SplurgeSafeIoPermissionError,
     SplurgeSafeIoUnicodeError,
+)
+from splurge_vendor_sync._vendor.splurge_safe_io.path_validator import PathValidator
+from splurge_vendor_sync._vendor.splurge_safe_io.safe_text_file_reader import (
+    open_safe_text_reader,
+)
+from splurge_vendor_sync._vendor.splurge_safe_io.safe_text_file_writer import (
+    TextFileWriteMode,
+    open_safe_text_writer,
 )
 from splurge_vendor_sync.exceptions import (
     SplurgeVendorSyncError,
     SplurgeVendorSyncOSError,
     SplurgeVendorSyncTypeError,
-    SplurgeVendorSyncUnicodeError,
     SplurgeVendorSyncValueError,
 )
 
 logger = logging.getLogger(__name__)
+
+
+class SyncResult(TypedDict):
+    """Type definition for sync_vendor() return value."""
+
+    files_removed: int
+    files_copied: int
+    directories_created: int
+    status: str
+    errors: list[str]
+
+
+class SyncPhaseResult(TypedDict):
+    """Type definition for _sync_phase() return value."""
+
+    files_copied: int
+    directories_created: int
+    errors: list[str]
 
 
 def sync_vendor(
@@ -46,7 +61,7 @@ def sync_vendor(
     package: str,
     vendor: str = "_vendor",
     extensions: str = "py;json;yml;yaml;ini",
-) -> dict[str, Any]:
+) -> SyncResult:
     """Synchronize a source package to a target project's vendor directory.
 
     This function implements a two-phase synchronization:
@@ -76,12 +91,12 @@ def sync_vendor(
         SplurgeVendorSyncUnicodeError: If file encoding fails
     """
     # Initialize result dictionary
-    result: dict[str, Any] = {
-        'files_removed': 0,
-        'files_copied': 0,
-        'directories_created': 0,
-        'status': 'success',
-        'errors': [],
+    result: SyncResult = {
+        "files_removed": 0,
+        "files_copied": 0,
+        "directories_created": 0,
+        "status": "success",
+        "errors": [],
     }
 
     try:
@@ -90,11 +105,11 @@ def sync_vendor(
 
         # Phase 2: Path Normalization & Validation
         validated_source = _validate_and_get_paths(source_path, target_path, package)
-        source_package_path = validated_source['source_package_path']
-        vendor_target_path = validated_source['vendor_target_path']
+        source_package_path = validated_source["source_package_path"]
+        vendor_target_path = validated_source["vendor_target_path"]
 
         # Phase 3: Clean Phase
-        result['files_removed'] = _clean_phase(vendor_target_path)
+        result["files_removed"] = _clean_phase(vendor_target_path)
 
         # Phase 4: Sync Phase
         sync_stats = _sync_phase(
@@ -102,15 +117,15 @@ def sync_vendor(
             vendor_target_path,
             extensions,
         )
-        result['files_copied'] = sync_stats['files_copied']
-        result['directories_created'] = sync_stats['directories_created']
-        result['errors'] = sync_stats['errors']
+        result["files_copied"] = sync_stats["files_copied"]
+        result["directories_created"] = sync_stats["directories_created"]
+        result["errors"] = sync_stats["errors"]
 
         # Phase 5: Determine final status
-        if result['errors']:
-            result['status'] = 'partial' if result['files_copied'] > 0 else 'failed'
+        if result["errors"]:
+            result["status"] = "partial" if result["files_copied"] > 0 else "failed"
         else:
-            result['status'] = 'success'
+            result["status"] = "success"
 
         logger.info(
             f"Sync completed with status '{result['status']}': "
@@ -124,8 +139,8 @@ def sync_vendor(
         raise
     except Exception as e:
         # Map unexpected exceptions to our exception types
-        result['status'] = 'failed'
-        result['errors'].append(f"Unexpected error: {str(e)}")
+        result["status"] = "failed"
+        result["errors"].append(f"Unexpected error: {str(e)}")
         logger.error(f"Unexpected error during sync: {e}")
         raise SplurgeVendorSyncError(
             message=f"Sync failed with unexpected error: {str(e)}",
@@ -237,8 +252,8 @@ def _validate_and_get_paths(
         ) from e
 
     return {
-        'source_package_path': source_package_path,
-        'vendor_target_path': target_path / '_vendor' / package,
+        "source_package_path": source_package_path,
+        "vendor_target_path": target_path / "_vendor" / package,
     }
 
 
@@ -254,7 +269,7 @@ def _clean_phase(vendor_target_path: Path) -> int:
     files_removed = 0
     try:
         # Count files before deletion
-        for item in vendor_target_path.rglob('*'):
+        for item in vendor_target_path.rglob("*"):
             if item.is_file():
                 files_removed += 1
 
@@ -280,7 +295,7 @@ def _sync_phase(
     source_package_path: Path,
     vendor_target_path: Path,
     extensions: str,
-) -> dict[str, Any]:
+) -> SyncPhaseResult:
     """Copy files from source to target vendor directory.
 
     Returns:
@@ -289,25 +304,25 @@ def _sync_phase(
             'directories_created': Number of directories created
             'errors': List of error messages
     """
-    result = {
-        'files_copied': 0,
-        'directories_created': 0,
-        'errors': [],
+    result: SyncPhaseResult = {
+        "files_copied": 0,
+        "directories_created": 0,
+        "errors": [],
     }
 
     # Parse extensions
-    ext_set = set(ext.strip().lower() for ext in extensions.split(';'))
+    ext_set = {ext.strip().lower() for ext in extensions.split(";")}
 
     try:
         # Create target directory
         vendor_target_path.parent.mkdir(parents=True, exist_ok=True)
         vendor_target_path.mkdir(parents=True, exist_ok=True)
-        result['directories_created'] += 1
+        result["directories_created"] += 1
 
         # Recursively copy files
-        for source_item in source_package_path.rglob('*'):
+        for source_item in source_package_path.rglob("*"):
             # Skip __pycache__ directories
-            if '__pycache__' in source_item.parts:
+            if "__pycache__" in source_item.parts:
                 continue
 
             # Calculate relative path
@@ -318,11 +333,11 @@ def _sync_phase(
                 if source_item.is_dir():
                     # Create directory
                     target_item.mkdir(parents=True, exist_ok=True)
-                    result['directories_created'] += 1
+                    result["directories_created"] += 1
 
                 elif source_item.is_file():
                     # Check extension
-                    file_ext = source_item.suffix.lstrip('.').lower()
+                    file_ext = source_item.suffix.lstrip(".").lower()
                     if file_ext not in ext_set:
                         continue
 
@@ -330,39 +345,35 @@ def _sync_phase(
                     target_item.parent.mkdir(parents=True, exist_ok=True)
 
                     # Copy file using SafeTextFileReader/Writer for text files
-                    if file_ext in ('py', 'json', 'yml', 'yaml', 'ini', 'md', 'txt'):
+                    if file_ext in ("py", "json", "yml", "yaml", "ini", "md", "txt"):
                         try:
-                            reader = SafeTextFileReader(source_item)
-                            content = reader.read()
+                            with open_safe_text_reader(source_item) as reader:
+                                content = reader.read()
 
-                            writer = SafeTextFileWriter(
+                            with open_safe_text_writer(
                                 target_item,
                                 file_write_mode=TextFileWriteMode.CREATE_OR_TRUNCATE,
                                 create_parents=True,
-                            )
-                            writer.write(content)
-                            writer.close()
+                            ) as writer:
+                                writer.write(content)
+
                         except SplurgeSafeIoUnicodeError as e:
-                            result['errors'].append(
-                                f"Unicode error copying {source_item}: {str(e)}"
-                            )
+                            result["errors"].append(f"Unicode error copying {source_item}: {str(e)}")
                             logger.warning(f"Unicode error: {e}")
                             continue
                         except SplurgeSafeIoError as e:
-                            result['errors'].append(
-                                f"Error copying {source_item}: {str(e)}"
-                            )
+                            result["errors"].append(f"Error copying {source_item}: {str(e)}")
                             logger.warning(f"Safe IO error: {e}")
                             continue
                     else:
                         # Binary copy for other file types
                         shutil.copy2(source_item, target_item)
 
-                    result['files_copied'] += 1
+                    result["files_copied"] += 1
                     logger.debug(f"Copied {source_item} to {target_item}")
 
             except Exception as e:
-                result['errors'].append(f"Error processing {source_item}: {str(e)}")
+                result["errors"].append(f"Error processing {source_item}: {str(e)}")
                 logger.warning(f"Error processing {source_item}: {e}")
                 continue
 
@@ -372,7 +383,7 @@ def _sync_phase(
             error_code="permission-denied",
         ) from e
     except OSError as e:
-        if 'disk' in str(e).lower():
+        if "disk" in str(e).lower():
             raise SplurgeVendorSyncOSError(
                 message=f"Disk full or I/O error: {str(e)}",
                 error_code="disk-full",

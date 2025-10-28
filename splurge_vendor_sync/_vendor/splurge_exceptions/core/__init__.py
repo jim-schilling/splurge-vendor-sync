@@ -6,14 +6,14 @@ predefined `_domain` that is used to construct full, hierarchical error codes.
 
 Examples:
 
-    from splurge_exceptions.core import SplurgeValueError
+    from .core import SplurgeValueError
 
     raise SplurgeValueError("Invalid input", error_code="invalid")
 
 """
 
-from splurge_exceptions.core.base import SplurgeError
-from splurge_exceptions.core.exceptions import (
+from .base import SplurgeError
+from .exceptions import (
     SplurgeFrameworkError,
     SplurgeLookupError,
     SplurgeOSError,

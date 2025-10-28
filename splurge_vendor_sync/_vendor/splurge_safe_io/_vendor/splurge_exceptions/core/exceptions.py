@@ -9,7 +9,7 @@ user-provided ``error_code`` to create a full hierarchical error identifier
 used by formatters and telemetry.
 """
 
-from splurge_exceptions.core.base import SplurgeError
+from .base import SplurgeError
 
 __all__ = [
     "SplurgeValueError",

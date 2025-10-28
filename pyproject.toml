@@ -127,7 +127,10 @@ line-ending = "auto"
 
 [tool.mypy]
 python_version = "3.12"
-# Only run mypy against the splurge_vendor_sync package
 files = ["splurge_vendor_sync"]
-# show_error_codes helps with diagnostics
 show_error_codes = true
+exclude = [
+    "tests/.*",
+    "_vendor/.*",
+]
+ignore_missing_imports = true

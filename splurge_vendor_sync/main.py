@@ -11,8 +11,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from splurge_vendor_sync.sync import sync_vendor
 from splurge_vendor_sync.exceptions import SplurgeVendorSyncError
+from splurge_vendor_sync.sync import SyncResult, sync_vendor
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +44,17 @@ def main(
         level=log_level,
         format='%(levelname)s: %(message)s',
     )
+
+    # Validate required parameters
+    if source_path is None:
+        print("Error: source_path is required", file=sys.stderr)
+        return 2
+    if target_path is None:
+        print("Error: target_path is required", file=sys.stderr)
+        return 2
+    if package is None:
+        print("Error: package is required", file=sys.stderr)
+        return 2
 
     try:
         # Use defaults if not provided
@@ -89,12 +100,12 @@ def main(
         return 1
 
 
-def _format_and_print_result(result: dict[str, Any]) -> None:
+def _format_and_print_result(result: SyncResult) -> None:
     """Format and print the sync result."""
-    status = result['status']
-    files_removed = result['files_removed']
-    files_copied = result['files_copied']
-    dirs_created = result['directories_created']
+    status = result["status"]
+    files_removed = result["files_removed"]
+    files_copied = result["files_copied"]
+    dirs_created = result["directories_created"]
 
     # Print summary
     print(f"Status: {status.upper()}")
@@ -103,16 +114,16 @@ def _format_and_print_result(result: dict[str, Any]) -> None:
     print(f"Directories created: {dirs_created}")
 
     # Print errors if any
-    if result['errors']:
+    if result["errors"]:
         print(f"\nErrors ({len(result['errors'])}):")
-        for error in result['errors']:
+        for error in result["errors"]:
             print(f"  - {error}")
 
 
 def _format_error(error: SplurgeVendorSyncError) -> str:
     """Format an error for display."""
     error_type = type(error).__name__
-    error_code = getattr(error, 'error_code', 'unknown')
+    error_code = getattr(error, "error_code", "unknown")
     message = str(error)
 
     return f"{error_type} ({error_code}): {message}"

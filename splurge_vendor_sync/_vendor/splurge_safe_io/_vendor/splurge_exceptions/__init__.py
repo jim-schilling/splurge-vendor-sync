@@ -19,8 +19,8 @@ Attributes:
 
 """
 
-from splurge_exceptions.core.base import SplurgeError, SplurgeSubclassError
-from splurge_exceptions.core.exceptions import (
+from .core.base import SplurgeError, SplurgeSubclassError
+from .core.exceptions import (
     SplurgeAttributeError,
     SplurgeFrameworkError,
     SplurgeImportError,
@@ -30,7 +30,7 @@ from splurge_exceptions.core.exceptions import (
     SplurgeTypeError,
     SplurgeValueError,
 )
-from splurge_exceptions.formatting.message import ErrorMessageFormatter
+from .formatting.message import ErrorMessageFormatter
 
 __version__ = "2025.2.0"
 __domains__ = ["exceptions", "errors", "handlers"]
