@@ -12,7 +12,7 @@ from __future__ import annotations
 import logging
 import shutil
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import TypedDict
 
 from splurge_vendor_sync._vendor.splurge_safe_io.exceptions import (
     SplurgeSafeIoError,
@@ -104,7 +104,7 @@ def sync_vendor(
         _validate_inputs(source_path, target_path, package, vendor, extensions)
 
         # Phase 2: Path Normalization & Validation
-        validated_source = _validate_and_get_paths(source_path, target_path, package)
+        validated_source = _validate_and_get_paths(source_path, target_path, package, vendor)
         source_package_path = validated_source["source_package_path"]
         vendor_target_path = validated_source["vendor_target_path"]
 
@@ -213,6 +213,7 @@ def _validate_and_get_paths(
     source_path: str | Path,
     target_path: str | Path,
     package: str,
+    vendor: str = "_vendor",
 ) -> dict[str, Path]:
     """Validate paths and return normalized versions."""
     source_path = Path(source_path).resolve()
@@ -253,7 +254,7 @@ def _validate_and_get_paths(
 
     return {
         "source_package_path": source_package_path,
-        "vendor_target_path": target_path / "_vendor" / package,
+        "vendor_target_path": target_path / vendor / package,
     }
 
 

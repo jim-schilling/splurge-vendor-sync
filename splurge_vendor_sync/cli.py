@@ -8,8 +8,6 @@ from __future__ import annotations
 import argparse
 import sys
 
-from splurge_vendor_sync.main import main as main_func
-
 
 def main() -> int:
     """Parse CLI arguments and invoke the main sync function.
@@ -17,13 +15,15 @@ def main() -> int:
     Returns:
         Exit code: 0 (success), 1 (runtime error), 2 (validation error)
     """
+    from splurge_vendor_sync.main import main as main_func
+
     parser = _create_parser()
     args = parser.parse_args()
 
     # Call the main function with parsed arguments
     return main_func(
-        source_path=args.source_path,
-        target_path=args.target_path,
+        source_path=args.source,
+        target_path=args.target,
         package=args.package,
         vendor=args.vendor,
         extensions=args.extensions,
@@ -37,6 +37,8 @@ def _create_parser() -> argparse.ArgumentParser:
     Returns:
         Configured ArgumentParser instance
     """
+    from splurge_vendor_sync import __version__
+
     parser = argparse.ArgumentParser(
         prog="splurge-vendor-sync",
         description="Synchronize vendor packages into a project's vendor directory",
@@ -45,7 +47,7 @@ def _create_parser() -> argparse.ArgumentParser:
 
     # Required arguments
     parser.add_argument(
-        "--source-path",
+        "--source",
         type=str,
         required=True,
         help="Path to the source directory containing the package to sync",
@@ -53,7 +55,7 @@ def _create_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "--target-path",
+        "--target",
         type=str,
         required=True,
         help="Path to the target project directory",
@@ -96,7 +98,7 @@ def _create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--version",
         action="version",
-        version="%(prog)s 1.0.0",
+        version=f"%(prog)s {__version__}",
     )
 
     return parser

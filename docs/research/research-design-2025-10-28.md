@@ -323,7 +323,7 @@ Target Initial State:
 ### Execution
 ```bash
 splurge-vendor-sync \
-  --source-path /d/repos/splurge-exceptions \
+  --source /d/repos/splurge-exceptions \
   --package splurge_exceptions \
   --target /d/repos/splurge-safe-io/splurge_safe_io
 ```
