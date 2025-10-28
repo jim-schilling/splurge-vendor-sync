@@ -1,5 +1,16 @@
 # splurge-vendor-sync
 
+[![PyPI version](https://badge.fury.io/py/splurge-vendor-sync.svg)](https://pypi.org/project/splurge-vendor-sync/)
+[![Python versions](https://img.shields.io/pypi/pyversions/splurge-vendor-sync.svg)](https://pypi.org/project/splurge-vendor-sync/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
+[![CI](https://github.com/jim-schilling/splurge-vendor-sync/actions/workflows/ci-quick-test.yml/badge.svg)](https://github.com/jim-schilling/splurge-vendor-sync/actions/workflows/ci-quick-test.yml)
+[![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen.svg)](https://github.com/jim-schilling/splurge-vendor-sync)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![mypy](https://img.shields.io/badge/mypy-checked-black)](https://mypy-lang.org/)
+
+[![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://jim-schilling.github.io/splurge-vendor-sync/)
+
 A powerful CLI tool for one-way vendor synchronization of Python libraries and applications. Automatically synchronize internal package dependencies into your project's vendor directory with selective file filtering and automatic cleanup.
 
 ## Features
@@ -30,7 +41,7 @@ Synchronize a source package to your project's vendor directory:
 
 ```bash
 splurge-vendor-sync \
-  --source /path/to/splurge-exceptions \
+  --source /path/to/splurge-vendor-sync \
   --package splurge_exceptions \
   --target /path/to/my-project/my_project
 ```
@@ -45,7 +56,7 @@ This will:
 
 ```bash
 splurge-vendor-sync \
-  --source /path/to/splurge-exceptions \
+  --source /path/to/splurge-vendor-sync \
   --package splurge_exceptions \
   --target /path/to/my-project/my_project \
   --ext "py;json;yaml"
@@ -55,7 +66,7 @@ splurge-vendor-sync \
 
 ```bash
 splurge-vendor-sync \
-  --source /path/to/splurge-exceptions \
+  --source /path/to/splurge-vendor-sync \
   --package splurge_exceptions \
   --target /path/to/my-project/my_project \
   --vendor "_vendored"
@@ -80,7 +91,7 @@ splurge-vendor-sync \
 ```bash
 # Re-run the same command - old files are automatically removed
 splurge-vendor-sync \
-  --source /path/to/splurge-exceptions \
+  --source /path/to/splurge-vendor-sync \
   --package splurge_exceptions \
   --target /path/to/my-project/my_project
 ```
@@ -89,7 +100,7 @@ splurge-vendor-sync \
 
 ```bash
 # Create a script to sync all your vendored dependencies
-splurge-vendor-sync --source /path/to/splurge-exceptions --package splurge_exceptions --target /path/to/my-project/my_project
+splurge-vendor-sync --source /path/to/splurge-vendor-sync --package splurge_exceptions --target /path/to/my-project/my_project
 splurge-vendor-sync --source /path/to/splurge-safe-io --package splurge_safe_io --target /path/to/my-project/my_project
 ```
 
