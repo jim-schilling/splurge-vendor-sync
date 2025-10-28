@@ -43,7 +43,7 @@ from .constants import (
 from .exceptions import (
     SplurgeSafeIoFileNotFoundError,
     SplurgeSafeIoLookupError,
-    SplurgeSafeIoOsError,
+    SplurgeSafeIoOSError,
     SplurgeSafeIoPermissionError,
     SplurgeSafeIoRuntimeError,
     SplurgeSafeIoUnicodeError,
@@ -196,7 +196,7 @@ class SafeTextFileReader:
             SplurgeSafeIoUnicodeError: If decoding fails.
             SplurgeSafeIoFileNotFoundError: If the file does not exist.
             SplurgeSafeIoFilePermissionError: If the file cannot be read due to permission issues.
-            SplurgeSafeIoOsError: If other general OS error occurs.
+            SplurgeSafeIoOSError: If other general OS error occurs.
             SplurgeSafeIoRuntimeError: If other general runtime error occurs.
         """
         try:
@@ -234,7 +234,7 @@ class SafeTextFileReader:
             ) from e
         except OSError as e:
             raise (
-                SplurgeSafeIoOsError(
+                SplurgeSafeIoOSError(
                     error_code="general", message=f"General OS error reading file: {self.file_path} : {str(e)}"
                 )
             ) from e
@@ -258,7 +258,7 @@ class SafeTextFileReader:
             SplurgeSafeIoUnicodeError: If decoding fails.
             SplurgeSafeIoFileNotFoundError: If the file does not exist.
             SplurgeSafeIoFilePermissionError: If the file cannot be read due to permission issues.
-            SplurgeSafeIoOsError: For other general OS-level errors.
+            SplurgeSafeIoOSError: For other general OS-level errors.
             SplurgeSafeIoRuntimeError: For other general runtime errors.
 
         Note: This method is equivalent to calling `readlines()` and joining the lines with `\n`.
@@ -279,7 +279,7 @@ class SafeTextFileReader:
             SplurgeSafeIoUnicodeError: If decoding fails.
             SplurgeSafeIoFileNotFoundError: If the file does not exist.
             SplurgeSafeIoFilePermissionError: If the file cannot be read due to permission issues.
-            SplurgeSafeIoOsError: For other general OS-level errors.
+            SplurgeSafeIoOSError: For other general OS-level errors.
             SplurgeSafeIoRuntimeError: For other general runtime errors.
         """
         text = self._read()
@@ -326,7 +326,7 @@ class SafeTextFileReader:
             SplurgeSafeIoUnicodeError: If decoding fails.
             SplurgeSafeIoFileNotFoundError: If the file does not exist.
             SplurgeSafeIoFilePermissionError: If the file cannot be read due to permission issues.
-            SplurgeSafeIoOsError: For other general OS-level errors.
+            SplurgeSafeIoOSError: For other general OS-level errors.
             SplurgeSafeIoRuntimeError: For other general runtime errors.
         """
         try:
@@ -493,7 +493,7 @@ class SafeTextFileReader:
             ) from e
         except OSError as e:
             raise (
-                SplurgeSafeIoOsError(
+                SplurgeSafeIoOSError(
                     error_code="general", message=f"General OS error reading file: {self.file_path} : {str(e)}"
                 )
             ) from e
@@ -519,7 +519,7 @@ class SafeTextFileReader:
             SplurgeSafeIoFileNotFoundError: If the file does not exist.
             SplurgeSafeIoFilePermissionError: If the file cannot be read due to permission issues.
             SplurgeSafeIoUnicodeError: If decoding fails.
-            SplurgeSafeIoOsError: For other general OS-level errors.
+            SplurgeSafeIoOSError: For other general OS-level errors.
             SplurgeSafeIoRuntimeError: For other general runtime errors.
         """
         # Avoid reading the entire file where possible by using the
@@ -594,7 +594,7 @@ class SafeTextFileReader:
             SplurgeSafeIoFileNotFoundError: If the file does not exist.
             SplurgeSafeIoFilePermissionError: If the file cannot be read due to permission issues.
             SplurgeSafeIoUnicodeError: If decoding fails.
-            SplurgeSafeIoOsError: For other general OS-level errors.
+            SplurgeSafeIoOSError: For other general OS-level errors.
             SplurgeSafeIoRuntimeError: For other general runtime errors.
         """
         # Validate threshold is reasonable (prevent accidental tiny thresholds)
@@ -690,7 +690,7 @@ def open_safe_text_reader(
         SplurgeSafeIoFileNotFoundError: If the file does not exist.
         SplurgeSafeIoFilePermissionError: If the file cannot be read due to permission issues.
         SplurgeSafeIoUnicodeError: If decoding fails.
-        SplurgeSafeIoOsError: For other general OS-level errors.
+        SplurgeSafeIoOSError: For other general OS-level errors.
         SplurgeSafeIoRuntimeError: For other general runtime errors.
     """
     safe_reader = SafeTextFileReader(
@@ -767,7 +767,7 @@ def open_safe_text_reader_as_stream(
         SplurgeSafeIoFileNotFoundError: If the file does not exist.
         SplurgeSafeIoFilePermissionError: If the file cannot be read due to permission issues.
         SplurgeSafeIoUnicodeError: If decoding fails.
-        SplurgeSafeIoOsError: For other general OS-level errors.
+        SplurgeSafeIoOSError: For other general OS-level errors.
         SplurgeSafeIoRuntimeError: For other general runtime errors.
 
     Note:

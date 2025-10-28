@@ -28,7 +28,7 @@ from typing import cast
 from .constants import CANONICAL_NEWLINE, DEFAULT_ENCODING
 from .exceptions import (
     SplurgeSafeIoFileExistsError,
-    SplurgeSafeIoOsError,
+    SplurgeSafeIoOSError,
     SplurgeSafeIoPermissionError,
     SplurgeSafeIoRuntimeError,
     SplurgeSafeIoUnicodeError,
@@ -68,7 +68,7 @@ class SafeTextFileWriter:
         SplurgeSafeIoFileExistsError: If mode is CREATE_NEW and the file exists.
         SplurgeSafeIoValueError: If the file cannot be opened with the requested encoding.
         SplurgeSafeIoUnicodeError: If encoding fails.
-        SplurgeSafeIoOsError: For other general OS-level errors.
+        SplurgeSafeIoOSError: For other general OS-level errors.
         SplurgeSafeIoPermissionError: If the file cannot be opened due to permission issues.
         SplurgeSafeIoRuntimeError: For other general runtime errors.
     """
@@ -127,7 +127,7 @@ class SafeTextFileWriter:
             SplurgeSafeIoValueError: If encoding fails when opening the file.
             SplurgeSafeIoPermissionError: If permission errors occur.
             SplurgeSafeIoUnicodeError: If Unicode encoding errors occur.
-            SplurgeSafeIoOsError: For other general OS-level errors.
+            SplurgeSafeIoOSError: For other general OS-level errors.
             SplurgeSafeIoRuntimeError: For other general runtime errors.
         """
         try:
@@ -160,7 +160,7 @@ class SafeTextFileWriter:
                 ).add_suggestion("Check the file permissions and ensure you have write access to the target path.")
             ) from exc  # pragma: no cover
         except OSError as exc:
-            raise SplurgeSafeIoOsError(
+            raise SplurgeSafeIoOSError(
                 error_code="general", message=f"General OS error opening file: {self._file_path} : {str(exc)}"
             ) from exc  # pragma: no cover
         except Exception as exc:
@@ -176,7 +176,7 @@ class SafeTextFileWriter:
 
         Raises:
             SplurgeSafeIoPermissionError: If directory creation is denied.
-            SplurgeSafeIoOsError: For other OS-level errors during creation.
+            SplurgeSafeIoOSError: For other OS-level errors during creation.
             SplurgeSafeIoRuntimeError: For other general runtime errors.
         """
         try:
@@ -195,7 +195,7 @@ class SafeTextFileWriter:
                 )
             ) from exc
         except OSError as exc:
-            raise SplurgeSafeIoOsError(
+            raise SplurgeSafeIoOSError(
                 error_code="general",
                 message=f"General OS error creating parent directories for: {self._file_path} : {str(exc)}",
             ) from exc
@@ -218,7 +218,7 @@ class SafeTextFileWriter:
         Raises:
             SplurgeSafeIoUnicodeError: If encoding fails.
             SplurgeSafeIoRuntimeError: If the file is not open.
-            SplurgeSafeIoOsError: For general OS-level errors.
+            SplurgeSafeIoOSError: For general OS-level errors.
             SplurgeSafeIoRuntimeError: For other general runtime errors.
         """
         # Normalize outside the lock to minimize lock hold time
@@ -236,7 +236,7 @@ class SafeTextFileWriter:
                     error_code="encoding", message=f"Encoding error writing to file: {self._file_path} : {str(exc)}"
                 ) from exc  # pragma: no cover
             except OSError as exc:
-                raise SplurgeSafeIoOsError(
+                raise SplurgeSafeIoOSError(
                     error_code="general",
                     message=f"General OS error writing to file: {self._file_path} : {str(exc)}",
                 ) from exc  # pragma: no cover
@@ -259,7 +259,7 @@ class SafeTextFileWriter:
 
         Raises:
             SplurgeSafeIoUnicodeError: If encoding fails.
-            SplurgeSafeIoOsError: For other general OS-level write errors.
+            SplurgeSafeIoOSError: For other general OS-level write errors.
             SplurgeSafeIoRuntimeError: If the file is not open.
             SplurgeSafeIoRuntimeError: For other general runtime errors.
         """
@@ -293,7 +293,7 @@ class SafeTextFileWriter:
                     error_code="encoding", message=f"Encoding error writing to file: {self._file_path} : {str(exc)}"
                 ) from exc  # pragma: no cover
             except OSError as exc:
-                raise SplurgeSafeIoOsError(
+                raise SplurgeSafeIoOSError(
                     error_code="general",
                     message=f"General OS error writing to file: {self._file_path} : {str(exc)}",
                 ) from exc  # pragma: no cover
@@ -308,7 +308,7 @@ class SafeTextFileWriter:
 
         Raises:
             SplurgeSafeIoRuntimeError: If the file is not open.
-            SplurgeSafeIoOsError: For general OS-level errors during flush.
+            SplurgeSafeIoOSError: For general OS-level errors during flush.
             SplurgeSafeIoRuntimeError: For other general runtime errors.
         """
         with self._lock:
@@ -317,7 +317,7 @@ class SafeTextFileWriter:
             try:
                 self._file_obj.flush()
             except OSError as exc:
-                raise SplurgeSafeIoOsError(
+                raise SplurgeSafeIoOSError(
                     error_code="general",
                     message=f"General OS error flushing file: {self._file_path} : {str(exc)}",
                 ) from exc  # pragma: no cover
@@ -368,7 +368,7 @@ def open_safe_text_writer(
         SplurgeSafeIoFileExistsError: If the file exists and mode is CREATE_NEW.
         SplurgeSafeIoUnicodeError: If the file cannot be opened with the requested encoding.
         SplurgeSafeIoRuntimeError: If the file is not open.
-        SplurgeSafeIoOsError: If a general OS error occurs.
+        SplurgeSafeIoOSError: If a general OS error occurs.
         SplurgeSafeIoPermissionError: If the file cannot be opened due to permission issues.
         SplurgeSafeIoRuntimeError: For general runtime errors.
 
