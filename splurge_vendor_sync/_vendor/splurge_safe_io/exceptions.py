@@ -55,7 +55,7 @@ class SplurgeSafeIoPathValidationError(SplurgeSafeIoError):
     _domain = "splurge-safe-io.path-validation"
 
 
-class SplurgeSafeIoOSError(SplurgeSafeIoError):
+class SplurgeSafeIoOsError(SplurgeSafeIoError):
     """Raised for OS-level errors encountered during file operations.
 
     Use this exception to wrap underlying OSErrors encountered during
@@ -96,7 +96,7 @@ class SplurgeSafeIoLookupError(SplurgeSafeIoError):
     _domain = "splurge-safe-io.lookup"
 
 
-class SplurgeSafeIoFileNotFoundError(SplurgeSafeIoOSError):
+class SplurgeSafeIoFileNotFoundError(SplurgeSafeIoOsError):
     """Raised when a specified file or path cannot be found.
 
     Use this exception to indicate that a required file is missing
@@ -106,7 +106,7 @@ class SplurgeSafeIoFileNotFoundError(SplurgeSafeIoOSError):
     _domain = "splurge-safe-io.file-not-found"
 
 
-class SplurgeSafeIoPermissionError(SplurgeSafeIoOSError):
+class SplurgeSafeIoPermissionError(SplurgeSafeIoOsError):
     """Raised when operations fail due to permission issues.
 
     Use this exception to indicate that the current user lacks
@@ -116,7 +116,7 @@ class SplurgeSafeIoPermissionError(SplurgeSafeIoOSError):
     _domain = "splurge-safe-io.permission"
 
 
-class SplurgeSafeIoFileExistsError(SplurgeSafeIoOSError):
+class SplurgeSafeIoFileExistsError(SplurgeSafeIoOsError):
     """Raised when attempting to create a file that already exists.
 
     Use this exception to indicate that a file creation operation

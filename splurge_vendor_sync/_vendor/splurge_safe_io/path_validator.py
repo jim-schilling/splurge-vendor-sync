@@ -18,9 +18,9 @@ from collections.abc import Callable
 from pathlib import Path
 
 # Local imports
-from splurge_safe_io.exceptions import (
+from .exceptions import (
     SplurgeSafeIoFileNotFoundError,
-    SplurgeSafeIoOSError,
+    SplurgeSafeIoOsError,
     SplurgeSafeIoPathValidationError,
     SplurgeSafeIoPermissionError,
 )
@@ -369,5 +369,5 @@ class PathValidator:
         try:
             cls.get_validated_path(file_path)
             return True
-        except (SplurgeSafeIoPathValidationError, SplurgeSafeIoOSError):
+        except (SplurgeSafeIoPathValidationError, SplurgeSafeIoOsError):
             return False
