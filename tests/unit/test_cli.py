@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from splurge_vendor_sync.cli import main as cli_main
-
+from splurge_vendor_sync import __version__
 
 @pytest.fixture
 def temp_workspace() -> Generator[tuple[Path, Path], None, None]:
@@ -303,7 +303,7 @@ class TestCLIBasic:
             captured = capsys.readouterr()
             # Verify version output contains the program name and version
             assert "splurge-vendor-sync" in captured.out
-            assert "2025.0.0" in captured.out
+            assert __version__ in captured.out
         finally:
             sys.argv = original_argv
 
