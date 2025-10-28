@@ -170,7 +170,7 @@ This document provides a comprehensive, phased implementation plan for `splurge-
 - [ ] Use `argparse` module for CLI parsing
 - [ ] Configure parser with description and epilog
 - [ ] Add required arguments:
-  - [ ] `--source-path` (str): Source package root path
+  - [ ] `--source` (str): Source package root path
   - [ ] `--target` (str): Target project path
   - [ ] `--package` (str): Package subdirectory name
 - [ ] Add optional arguments:
@@ -285,7 +285,7 @@ This document provides a comprehensive, phased implementation plan for `splurge-
 ### 6.2 CLI Reference (docs/cli/CLI-REFERENCE.md)
 - [ ] Document command syntax
 - [ ] Document each argument:
-  - [ ] `--source-path`: description, type, required, examples
+  - [ ] `--source`: description, type, required, examples
   - [ ] `--target`: description, type, required, examples
   - [ ] `--package`: description, type, required, examples
   - [ ] `--vendor`: description, type, optional, default, examples

@@ -9,7 +9,6 @@ from __future__ import annotations
 import logging
 import sys
 from pathlib import Path
-from typing import Any
 
 from splurge_vendor_sync.exceptions import SplurgeVendorSyncError
 from splurge_vendor_sync.sync import SyncResult, sync_vendor
@@ -42,7 +41,7 @@ def main(
     log_level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
         level=log_level,
-        format='%(levelname)s: %(message)s',
+        format="%(levelname)s: %(message)s",
     )
 
     # Validate required parameters

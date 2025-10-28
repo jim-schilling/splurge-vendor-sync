@@ -80,6 +80,7 @@ omit = [
     "*/__pycache__/*",
     "*/venv/*",
     "*/env/*",
+    "*/_vendor/*",
 ]
 
 [tool.coverage.report]
