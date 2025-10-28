@@ -260,3 +260,82 @@ class TestCLIBasic:
             assert exit_code == 2  # Validation error
         finally:
             sys.argv = original_argv
+
+    def test_cli_with_verbose_and_ext_flags(self, temp_workspace: tuple[Path, Path], capsys) -> None:
+        """Test CLI with combined --verbose and --ext flags."""
+        source, target = temp_workspace
+
+        import sys
+
+        original_argv = sys.argv
+        try:
+            sys.argv = [
+                "splurge-vendor-sync",
+                "--source",
+                str(source),
+                "--target",
+                str(target),
+                "--package",
+                "test_pkg",
+                "--verbose",
+                "--ext",
+                "py;json",
+            ]
+            exit_code = cli_main()
+            assert exit_code == 0
+            # Verify the sync completed successfully
+            assert (target / "_vendor" / "test_pkg").exists()
+            assert (target / "_vendor" / "test_pkg" / "module.py").exists()
+            assert (target / "_vendor" / "test_pkg" / "config.json").exists()
+        finally:
+            sys.argv = original_argv
+
+    def test_cli_version_output(self, capsys) -> None:
+        """Test CLI version output contains expected version string."""
+        import sys
+
+        original_argv = sys.argv
+        try:
+            sys.argv = ["splurge-vendor-sync", "--version"]
+            with pytest.raises(SystemExit) as exc_info:
+                cli_main()
+            assert exc_info.value.code == 0
+            captured = capsys.readouterr()
+            # Verify version output contains the program name and version
+            assert "splurge-vendor-sync" in captured.out
+            assert "2025.0.0" in captured.out
+        finally:
+            sys.argv = original_argv
+
+    def test_cli_all_flags_combined(
+        self, temp_workspace: tuple[Path, Path], capsys
+    ) -> None:
+        """Test CLI with all optional flags combined."""
+        source, target = temp_workspace
+
+        import sys
+
+        original_argv = sys.argv
+        try:
+            sys.argv = [
+                "splurge-vendor-sync",
+                "--source",
+                str(source),
+                "--target",
+                str(target),
+                "--package",
+                "test_pkg",
+                "--vendor",
+                "my_vendor",
+                "--ext",
+                "py;json;ini",
+                "--verbose",
+            ]
+            exit_code = cli_main()
+            assert exit_code == 0
+            # Verify custom vendor directory was used
+            assert (target / "my_vendor" / "test_pkg").exists()
+            assert (target / "my_vendor" / "test_pkg" / "module.py").exists()
+            assert (target / "my_vendor" / "test_pkg" / "config.json").exists()
+        finally:
+            sys.argv = original_argv

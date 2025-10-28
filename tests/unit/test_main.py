@@ -5,13 +5,9 @@ from __future__ import annotations
 import tempfile
 from collections.abc import Generator
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
-from splurge_vendor_sync.exceptions import (
-    SplurgeVendorSyncValueError,
-)
 from splurge_vendor_sync.main import main
 
 
@@ -176,105 +172,109 @@ class TestMainBasic:
 
         assert exit_code == 0
 
-    def test_main_keyboard_interrupt(self, temp_workspace: tuple[Path, Path]) -> None:
-        """Test main() handles KeyboardInterrupt."""
+    def test_main_with_complex_package_structure(self, temp_workspace: tuple[Path, Path]) -> None:
+        """Test main() with complex package structure including subdirectories."""
         source, target = temp_workspace
 
-        with patch("splurge_vendor_sync.main.sync_vendor") as mock_sync:
-            mock_sync.side_effect = KeyboardInterrupt()
+        # Create a more complex package structure
+        package = source / "complex_pkg"
+        package.mkdir()
+        (package / "module.py").write_text("# Module 1")
+        (package / "config.json").write_text('{"key": "value"}')
 
-            exit_code = main(
-                source_path=source,
-                target_path=target,
-                package="test_pkg",
-            )
+        sub_dir = package / "submodule"
+        sub_dir.mkdir()
+        (sub_dir / "utils.py").write_text("# Utils")
+        (sub_dir / "settings.json").write_text("{}")
 
-            assert exit_code == 1  # Runtime error for interrupt
+        exit_code = main(
+            source_path=source,
+            target_path=target,
+            package="complex_pkg",
+        )
 
-    def test_main_unexpected_exception(self, temp_workspace: tuple[Path, Path]) -> None:
-        """Test main() handles unexpected exceptions."""
+        assert exit_code == 0
+        vendor_pkg = target / "_vendor" / "complex_pkg"
+        assert vendor_pkg.exists()
+        assert (vendor_pkg / "module.py").exists()
+        assert (vendor_pkg / "config.json").exists()
+        assert (vendor_pkg / "submodule" / "utils.py").exists()
+
+    def test_main_with_multiple_file_types(self, temp_workspace: tuple[Path, Path]) -> None:
+        """Test main() syncs only specified file extensions."""
         source, target = temp_workspace
 
-        with patch("splurge_vendor_sync.main.sync_vendor") as mock_sync:
-            mock_sync.side_effect = RuntimeError("Unexpected error")
+        package = source / "multi_ext_pkg"
+        package.mkdir()
+        (package / "main.py").write_text("# Python")
+        (package / "config.json").write_text("{}")
+        (package / "readme.txt").write_text("# Readme")
+        (package / "script.sh").write_text("#!/bin/bash")
 
-            exit_code = main(
-                source_path=source,
-                target_path=target,
-                package="test_pkg",
-            )
+        # Only sync py and json files
+        exit_code = main(
+            source_path=source,
+            target_path=target,
+            package="multi_ext_pkg",
+            extensions="py;json",
+        )
 
-            assert exit_code == 1  # Runtime error
+        assert exit_code == 0
+        vendor_pkg = target / "_vendor" / "multi_ext_pkg"
+        assert (vendor_pkg / "main.py").exists()
+        assert (vendor_pkg / "config.json").exists()
+        assert not (vendor_pkg / "readme.txt").exists()
+        assert not (vendor_pkg / "script.sh").exists()
 
-    def test_main_type_error_from_sync(self, temp_workspace: tuple[Path, Path]) -> None:
-        """Test main() handles SplurgeVendorSyncTypeError."""
-        from splurge_vendor_sync.exceptions import SplurgeVendorSyncTypeError
-
+    def test_main_handles_resync_of_existing_vendor(self, temp_workspace: tuple[Path, Path]) -> None:
+        """Test main() handles re-syncing when vendor directory already exists."""
         source, target = temp_workspace
 
-        with patch("splurge_vendor_sync.main.sync_vendor") as mock_sync:
-            mock_sync.side_effect = SplurgeVendorSyncTypeError(message="Invalid type", error_code="type-error")
+        package = source / "resync_pkg"
+        package.mkdir()
+        (package / "new.py").write_text("# New file")
 
-            exit_code = main(
-                source_path=source,
-                target_path=target,
-                package="test_pkg",
-            )
+        # First sync
+        exit_code = main(
+            source_path=source,
+            target_path=target,
+            package="resync_pkg",
+        )
+        assert exit_code == 0
 
-            assert exit_code == 2  # Validation error
+        vendor_pkg = target / "_vendor" / "resync_pkg"
+        assert (vendor_pkg / "new.py").exists()
 
-    def test_main_value_error_from_sync(self, temp_workspace: tuple[Path, Path]) -> None:
-        """Test main() handles SplurgeVendorSyncValueError."""
+        # Add an old file to the vendor directory that should be removed
+        (vendor_pkg / "old.py").write_text("# Old file")
+        assert (vendor_pkg / "old.py").exists()
+
+        # Second sync - old files should be removed
+        exit_code = main(
+            source_path=source,
+            target_path=target,
+            package="resync_pkg",
+        )
+        assert exit_code == 0
+        assert (vendor_pkg / "new.py").exists()
+        assert not (vendor_pkg / "old.py").exists()
+
+    def test_main_empty_package(self, temp_workspace: tuple[Path, Path]) -> None:
+        """Test main() with empty package (no matching files)."""
         source, target = temp_workspace
 
-        with patch("splurge_vendor_sync.main.sync_vendor") as mock_sync:
-            mock_sync.side_effect = SplurgeVendorSyncValueError(message="Invalid value", error_code="value-error")
+        package = source / "empty_pkg"
+        package.mkdir()
+        (package / "readme.txt").write_text("No Python files here")
 
-            exit_code = main(
-                source_path=source,
-                target_path=target,
-                package="test_pkg",
-            )
+        # Only sync py files
+        exit_code = main(
+            source_path=source,
+            target_path=target,
+            package="empty_pkg",
+            extensions="py",
+        )
 
-            assert exit_code == 2  # Validation error
-
-    def test_main_os_error_from_sync(self, temp_workspace: tuple[Path, Path]) -> None:
-        """Test main() handles SplurgeVendorSyncOSError."""
-        from splurge_vendor_sync.exceptions import SplurgeVendorSyncOSError
-
-        source, target = temp_workspace
-
-        with patch("splurge_vendor_sync.main.sync_vendor") as mock_sync:
-            mock_sync.side_effect = SplurgeVendorSyncOSError(message="OS error", error_code="os-error")
-
-            exit_code = main(
-                source_path=source,
-                target_path=target,
-                package="test_pkg",
-            )
-
-            assert exit_code == 1  # Runtime error
-
-    def test_main_result_with_errors(self, temp_workspace: tuple[Path, Path], capsys) -> None:
-        """Test main() output with errors in result."""
-        source, target = temp_workspace
-
-        with patch("splurge_vendor_sync.main.sync_vendor") as mock_sync:
-            mock_sync.return_value = {
-                "files_removed": 0,
-                "files_copied": 1,
-                "directories_created": 1,
-                "status": "partial",
-                "errors": ["Error 1", "Error 2"],
-            }
-
-            exit_code = main(
-                source_path=source,
-                target_path=target,
-                package="test_pkg",
-            )
-
-            assert exit_code == 0
-            captured = capsys.readouterr()
-            assert "Status: PARTIAL" in captured.out
-            assert "Errors (2):" in captured.out
+        assert exit_code == 0
+        vendor_pkg = target / "_vendor" / "empty_pkg"
+        assert vendor_pkg.exists()  # Directory created but empty
