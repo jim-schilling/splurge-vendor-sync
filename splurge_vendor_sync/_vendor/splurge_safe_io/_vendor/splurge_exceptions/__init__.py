@@ -32,7 +32,7 @@ from .core.exceptions import (
 )
 from .formatting.message import ErrorMessageFormatter
 
-__version__ = "2025.2.0"
+__version__ = "2025.2.2"
 __domains__ = ["exceptions", "errors", "handlers"]
 
 __all__ = [

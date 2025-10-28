@@ -6,7 +6,7 @@ Expose commonly-used helpers and constants for convenience.
 
 from __future__ import annotations
 
-__version__ = "2025.3.0"
+__version__ = "2025.4.0"
 
 # Public exports (import lazily to avoid side-effects)
 from .constants import CANONICAL_NEWLINE, DEFAULT_ENCODING
@@ -15,7 +15,7 @@ from .exceptions import (
     SplurgeSafeIoFileExistsError,
     SplurgeSafeIoFileNotFoundError,
     SplurgeSafeIoLookupError,
-    SplurgeSafeIoOsError,
+    SplurgeSafeIoOSError,
     SplurgeSafeIoPathValidationError,
     SplurgeSafeIoPermissionError,
     SplurgeSafeIoRuntimeError,
@@ -38,7 +38,7 @@ __all__ = [
     "DEFAULT_ENCODING",
     "SplurgeSafeIoError",
     "SplurgeSafeIoPathValidationError",
-    "SplurgeSafeIoOsError",
+    "SplurgeSafeIoOSError",
     "SplurgeSafeIoValueError",
     "SplurgeSafeIoRuntimeError",
     "SplurgeSafeIoLookupError",

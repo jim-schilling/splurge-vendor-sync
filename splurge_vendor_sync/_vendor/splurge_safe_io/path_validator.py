@@ -20,7 +20,7 @@ from pathlib import Path
 # Local imports
 from .exceptions import (
     SplurgeSafeIoFileNotFoundError,
-    SplurgeSafeIoOsError,
+    SplurgeSafeIoOSError,
     SplurgeSafeIoPathValidationError,
     SplurgeSafeIoPermissionError,
 )
@@ -369,5 +369,5 @@ class PathValidator:
         try:
             cls.get_validated_path(file_path)
             return True
-        except (SplurgeSafeIoPathValidationError, SplurgeSafeIoOsError):
+        except (SplurgeSafeIoPathValidationError, SplurgeSafeIoOSError):
             return False
