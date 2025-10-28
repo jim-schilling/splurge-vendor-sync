@@ -8,8 +8,9 @@ from pathlib import Path
 
 import pytest
 
-from splurge_vendor_sync.cli import main as cli_main
 from splurge_vendor_sync import __version__
+from splurge_vendor_sync.cli import main as cli_main
+
 
 @pytest.fixture
 def temp_workspace() -> Generator[tuple[Path, Path], None, None]:
@@ -307,9 +308,7 @@ class TestCLIBasic:
         finally:
             sys.argv = original_argv
 
-    def test_cli_all_flags_combined(
-        self, temp_workspace: tuple[Path, Path], capsys
-    ) -> None:
+    def test_cli_all_flags_combined(self, temp_workspace: tuple[Path, Path], capsys) -> None:
         """Test CLI with all optional flags combined."""
         source, target = temp_workspace
 
