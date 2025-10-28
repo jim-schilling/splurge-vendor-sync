@@ -13,7 +13,7 @@ Examples:
 import argparse
 import sys
 
-from splurge_exceptions import __version__
+from . import __version__
 
 
 def main(args: list[str] | None = None) -> int:
