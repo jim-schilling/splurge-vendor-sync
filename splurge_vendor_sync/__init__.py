@@ -16,7 +16,7 @@ from splurge_vendor_sync.exceptions import (
 from splurge_vendor_sync.main import main
 from splurge_vendor_sync.sync import sync_vendor
 
-__version__ = "2025.0.0"
+__version__ = "2025.0.1"
 
 __all__ = [
     "__version__",

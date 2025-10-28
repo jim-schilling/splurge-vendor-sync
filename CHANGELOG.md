@@ -1,0 +1,12 @@
+## Changelog
+
+## [2025.0.1] - 2024-10-28
+### Changed
+- Updated `splurge_exceptions` to version `2025.2.2` in the vendored package.
+
+### Fixed
+- Corrected case of SplurgeSafeIoOSError in exception handling within the vendored `splurge_safe_io` package.
+- Fixed relative import paths in vendored packages to ensure proper module resolution.
+
+## [2025.0.0] - 2024-10-28
+- **Initial release** of the splurge-vendor-sync package.

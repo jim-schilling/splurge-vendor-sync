@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from splurge_vendor_sync import __version__
 from splurge_vendor_sync.cli import main as cli_main
 
 
@@ -303,13 +304,11 @@ class TestCLIBasic:
             captured = capsys.readouterr()
             # Verify version output contains the program name and version
             assert "splurge-vendor-sync" in captured.out
-            assert "2025.0.0" in captured.out
+            assert __version__ in captured.out
         finally:
             sys.argv = original_argv
 
-    def test_cli_all_flags_combined(
-        self, temp_workspace: tuple[Path, Path], capsys
-    ) -> None:
+    def test_cli_all_flags_combined(self, temp_workspace: tuple[Path, Path], capsys) -> None:
         """Test CLI with all optional flags combined."""
         source, target = temp_workspace
 
