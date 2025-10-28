@@ -332,16 +332,16 @@ def _sync_phase(
                     # Copy file using SafeTextFileReader/Writer for text files
                     if file_ext in ('py', 'json', 'yml', 'yaml', 'ini', 'md', 'txt'):
                         try:
-                            reader = SafeTextFileReader()
-                            content = reader.read(source_item)
+                            reader = SafeTextFileReader(source_item)
+                            content = reader.read()
 
-                            writer = SafeTextFileWriter()
-                            writer.write(
+                            writer = SafeTextFileWriter(
                                 target_item,
-                                content,
-                                mode=TextFileWriteMode.WRITE,
+                                file_write_mode=TextFileWriteMode.CREATE_OR_TRUNCATE,
                                 create_parents=True,
                             )
+                            writer.write(content)
+                            writer.close()
                         except SplurgeSafeIoUnicodeError as e:
                             result['errors'].append(
                                 f"Unicode error copying {source_item}: {str(e)}"
