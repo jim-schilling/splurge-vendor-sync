@@ -159,13 +159,13 @@ def _validate_inputs(
 ) -> None:
     """Validate input parameters."""
     # Type validation
-    if not isinstance(source_path, (str, Path)):
+    if not isinstance(source_path, str | Path):
         raise SplurgeVendorSyncTypeError(
             message=f"source_path must be str or Path, got {type(source_path).__name__}",
             error_code="type-mismatch",
         )
 
-    if not isinstance(target_path, (str, Path)):
+    if not isinstance(target_path, str | Path):
         raise SplurgeVendorSyncTypeError(
             message=f"target_path must be str or Path, got {type(target_path).__name__}",
             error_code="type-mismatch",
