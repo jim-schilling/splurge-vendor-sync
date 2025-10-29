@@ -1,5 +1,12 @@
 ## Changelog
 
+### [2025.1.0] - 2024-10-29
+
+### Updated
+- Bumped version to `2025.1.0` in `__init__.py` and `pyproject.toml`.
+- Updated vendored `splurge_exceptions` to version `2025.3.0`.
+- Updated vendored `splurge_safe_io` to version `2025.4.0`.
+
 ### [2025.0.2] - 2024-10-29
 
 ### Updated
