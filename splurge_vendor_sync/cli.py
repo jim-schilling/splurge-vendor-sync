@@ -15,7 +15,7 @@ def main() -> int:
     Returns:
         Exit code: 0 (success), 1 (runtime error), 2 (validation error)
     """
-    from splurge_vendor_sync.main import main as main_func
+    from .main import main as main_func
 
     parser = _create_parser()
     args = parser.parse_args()
@@ -37,7 +37,7 @@ def _create_parser() -> argparse.ArgumentParser:
     Returns:
         Configured ArgumentParser instance
     """
-    from splurge_vendor_sync import __version__
+    from . import __version__
 
     parser = argparse.ArgumentParser(
         prog="splurge-vendor-sync",

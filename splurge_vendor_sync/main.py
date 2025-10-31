@@ -10,8 +10,8 @@ import logging
 import sys
 from pathlib import Path
 
-from splurge_vendor_sync.exceptions import SplurgeVendorSyncError
-from splurge_vendor_sync.sync import SyncResult, sync_vendor
+from .exceptions import SplurgeVendorSyncError
+from .sync import SyncResult, sync_vendor
 
 logger = logging.getLogger(__name__)
 

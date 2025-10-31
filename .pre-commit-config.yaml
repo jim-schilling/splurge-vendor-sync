@@ -11,7 +11,7 @@ repos:
 
       - id: system-mypy
         name: System Mypy
-        entry: bash -c 'python -m mypy splurge_vendor_sync'
+        entry: bash -c 'python -m mypy .'
         language: system
         pass_filenames: false
         stages: [pre-commit]

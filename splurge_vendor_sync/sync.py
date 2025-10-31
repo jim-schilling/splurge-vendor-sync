@@ -14,20 +14,20 @@ import shutil
 from pathlib import Path
 from typing import TypedDict
 
-from splurge_vendor_sync._vendor.splurge_safe_io.exceptions import (
+from ._vendor.splurge_safe_io.exceptions import (
     SplurgeSafeIoError,
     SplurgeSafeIoPathValidationError,
     SplurgeSafeIoUnicodeError,
 )
-from splurge_vendor_sync._vendor.splurge_safe_io.path_validator import PathValidator
-from splurge_vendor_sync._vendor.splurge_safe_io.safe_text_file_reader import (
+from ._vendor.splurge_safe_io.path_validator import PathValidator
+from ._vendor.splurge_safe_io.safe_text_file_reader import (
     open_safe_text_reader,
 )
-from splurge_vendor_sync._vendor.splurge_safe_io.safe_text_file_writer import (
+from ._vendor.splurge_safe_io.safe_text_file_writer import (
     TextFileWriteMode,
     open_safe_text_writer,
 )
-from splurge_vendor_sync.exceptions import (
+from .exceptions import (
     SplurgeVendorSyncError,
     SplurgeVendorSyncOSError,
     SplurgeVendorSyncTypeError,
