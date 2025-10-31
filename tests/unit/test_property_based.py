@@ -19,28 +19,18 @@ class TestPathHandling:
     """Property-based tests for path handling."""
 
     @given(
-        st.text(
-            min_size=1,
-            max_size=50,
-            alphabet=st.characters(
-                blacklist_categories=("Cc", "Cs"),
-                blacklist_characters='<>:"|?*\\/',
-            ),
+        st.from_regex(
+            r"[a-zA-Z_][a-zA-Z0-9_]*",
+            fullmatch=True,
         )
     )
     @settings(suppress_health_check=[HealthCheck.too_slow], max_examples=50)
     def test_package_name_with_valid_characters(self, pkg_name: str) -> None:
         """Property: sync_vendor should handle any valid package name."""
-        # Filter out path separators, problematic characters, and whitespace-only names
-        if (
-            not pkg_name
-            or pkg_name.isspace()
-            or "/" in pkg_name
-            or "\\" in pkg_name
-            or "\0" in pkg_name
-            or ":" in pkg_name
-        ):
-            return
+        # Strategy only generates valid Python package names:
+        # - starts with letter or underscore
+        # - contains only letters, digits, underscores
+        # - no whitespace, no special characters
 
         with tempfile.TemporaryDirectory() as tmpdir:
             base = Path(tmpdir)

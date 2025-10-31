@@ -4,8 +4,8 @@ A utility for synchronizing vendor packages into a project's vendor directory
 with support for extension filtering, clean/sync phases, and comprehensive error handling.
 """
 
-from splurge_vendor_sync.cli import main as cli_main
-from splurge_vendor_sync.exceptions import (
+from .cli import main as cli_main
+from .exceptions import (
     SplurgeVendorSyncError,
     SplurgeVendorSyncOSError,
     SplurgeVendorSyncRuntimeError,
@@ -13,10 +13,10 @@ from splurge_vendor_sync.exceptions import (
     SplurgeVendorSyncUnicodeError,
     SplurgeVendorSyncValueError,
 )
-from splurge_vendor_sync.main import main
-from splurge_vendor_sync.sync import sync_vendor
+from .main import main
+from .sync import sync_vendor
 
-__version__ = "2025.1.0"
+__version__ = "2025.1.1"
 
 __all__ = [
     "__version__",
