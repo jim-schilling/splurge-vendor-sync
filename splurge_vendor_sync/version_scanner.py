@@ -52,12 +52,9 @@ def extract_version_from_file(file_path: Path, version_tag: str = "__version__")
             # Check if this is an assignment to our target variable
             for target in node.targets:
                 if isinstance(target, ast.Name) and target.id == version_tag:
-                    # Extract the value
+                    # Extract the value if it's a string constant
                     if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
                         return node.value.value
-                    # Handle older Python versions where Str is used instead of Constant
-                    elif isinstance(node.value, ast.Str):  # type: ignore
-                        return node.value.s  # type: ignore
 
     return None
 

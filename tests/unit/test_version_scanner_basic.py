@@ -393,15 +393,11 @@ class TestIntegration:
             # Create realistic package structures
             pkg1 = vendor / "splurge_safe_io"
             pkg1.mkdir()
-            (pkg1 / "__init__.py").write_text(
-                '''"""Module."""\n__version__ = "2025.4.3"\n'''
-            )
+            (pkg1 / "__init__.py").write_text('''"""Module."""\n__version__ = "2025.4.3"\n''')
 
             pkg2 = vendor / "splurge_exceptions"
             pkg2.mkdir()
-            (pkg2 / "__init__.py").write_text(
-                '''"""Module."""\n__version__ = "2025.3.1"\n'''
-            )
+            (pkg2 / "__init__.py").write_text('''"""Module."""\n__version__ = "2025.3.1"\n''')
 
             versions = scan_vendor_packages(target)
             output = format_version_output(versions)
