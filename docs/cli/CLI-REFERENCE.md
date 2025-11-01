@@ -57,7 +57,7 @@ One-way vendor synchronization for Python packages...
 
 ## Basic Usage
 
-### Command Signature
+### Command Signature (Sync Mode)
 
 ```bash
 splurge-vendor-sync \
@@ -68,7 +68,16 @@ splurge-vendor-sync \
   [--ext <EXTENSIONS>]
 ```
 
-### Minimal Example
+### Command Signature (Scan Mode)
+
+```bash
+splurge-vendor-sync \
+  --target <TARGET-PATH> \
+  --scan [VERSION-TAG] \
+  [--vendor <VENDOR-DIR>]
+```
+
+### Minimal Example (Sync Mode)
 
 ```bash
 splurge-vendor-sync \
@@ -77,7 +86,15 @@ splurge-vendor-sync \
   --package splurge_exceptions
 ```
 
-### Full Example
+### Minimal Example (Scan Mode)
+
+```bash
+splurge-vendor-sync \
+  --target /path/to/my-project/my_package \
+  --scan
+```
+
+### Full Example (Sync Mode)
 
 ```bash
 splurge-vendor-sync \
@@ -86,6 +103,15 @@ splurge-vendor-sync \
   --package splurge_exceptions \
   --vendor _vendor \
   --ext "py;json;yaml"
+```
+
+### Full Example (Scan Mode)
+
+```bash
+splurge-vendor-sync \
+  --target /d/repos/my-project/my_package \
+  --vendor _vendor \
+  --scan __version__
 ```
 
 ---
@@ -296,6 +322,68 @@ splurge-vendor-sync -h
 
 ---
 
+#### --scan [VERSION-TAG]
+
+**Type**: Optional flag with optional argument  
+**Required**: No  
+**Default**: None (scan mode disabled)
+
+Scan vendor directory for version information instead of syncing packages.
+
+**Description**:
+- Enables scan mode instead of sync mode
+- Searches for version assignments in vendored packages
+- Default version tag is `__version__` when flag is used without argument
+- Checks `__init__.py` first, then fallback to `__main__.py`
+- Returns `?` for packages where version is not found
+- Ignores `--source` and `--package` parameters when enabled
+- Respects custom vendor directory specified by `--vendor`
+
+**Usage Patterns**:
+
+```bash
+# Scan with default __version__ tag
+splurge-vendor-sync --target /path/to/project --scan
+
+# Scan with custom version tag
+splurge-vendor-sync --target /path/to/project --scan MY_VERSION
+
+# Scan with custom vendor directory
+splurge-vendor-sync --target /path/to/project --vendor custom_vendor --scan MY_VERSION
+```
+
+**Examples**:
+```bash
+# Default scan
+splurge-vendor-sync --target /d/projects/my-project/my_package --scan
+
+# Custom version tag
+splurge-vendor-sync --target /d/projects/my-project/my_package --scan VERSION
+
+# With custom vendor dir
+splurge-vendor-sync --target /d/projects/my-project/my_package --vendor _vendored --scan
+
+# Scan and capture output
+splurge-vendor-sync --target /d/projects/my-project/my_package --scan > versions.txt
+```
+
+**Output Format**:
+
+Each line contains package name and version (or `?` if not found):
+
+```
+splurge_exceptions 2025.3.1
+splurge_safe_io 2025.4.3
+custom_package ?
+```
+
+**Error Handling**:
+- ❌ Target path doesn't exist → `SplurgeVendorSyncValueError` (exit code 2)
+- ❌ Vendor directory doesn't exist → `SplurgeVendorSyncValueError` (exit code 2)
+- ⚠️ Version not found → Returns `?` (not an error)
+
+---
+
 ## Common Examples
 
 ### Example 1: Basic Sync
@@ -469,6 +557,135 @@ case $exit_code in
         exit 1
         ;;
 esac
+```
+
+---
+
+### Example 9: Scan for Default Version Tag
+
+Scan vendored packages for `__version__`.
+
+```bash
+splurge-vendor-sync \
+  --target /d/repos/my-project/my_package \
+  --scan
+```
+
+**What happens**:
+- Searches all packages in `_vendor/` directory
+- Looks for `__version__` assignment in each package's `__init__.py`
+- Falls back to `__main__.py` if not found in `__init__.py`
+- Prints package name and version, or `?` if not found
+
+**Expected output**:
+```
+splurge_exceptions 2025.3.1
+splurge_safe_io 2025.4.3
+my_package ?
+```
+
+---
+
+### Example 10: Scan with Custom Version Tag
+
+Scan for a custom version variable name.
+
+```bash
+splurge-vendor-sync \
+  --target /d/repos/my-project/my_package \
+  --scan MY_VERSION
+```
+
+**What happens**:
+- Searches for `MY_VERSION` instead of `__version__`
+- Same fallback logic and output format
+
+---
+
+### Example 11: Scan with Custom Vendor Directory
+
+Scan packages in a custom vendor directory.
+
+```bash
+splurge-vendor-sync \
+  --target /d/repos/my-project/my_package \
+  --vendor "custom_vendor" \
+  --scan
+```
+
+**What happens**:
+- Scans `custom_vendor/` instead of `_vendor/`
+- Same version extraction logic
+
+---
+
+### Example 12: Scan and Save to File
+
+Capture scan results to a file for logging.
+
+```bash
+splurge-vendor-sync \
+  --target /d/repos/my-project/my_package \
+  --scan > vendor_versions.txt
+
+cat vendor_versions.txt
+# Output:
+# splurge_exceptions 2025.3.1
+# splurge_safe_io 2025.4.3
+```
+
+---
+
+### Example 13: Scan and Parse with Bash
+
+Use scan results in a bash script.
+
+```bash
+#!/bin/bash
+
+# Scan and parse versions
+splurge-vendor-sync --target ./my_package --scan | while read package version; do
+    echo "Package: $package, Version: $version"
+    if [ "$version" = "?" ]; then
+        echo "  ⚠ Warning: Version not found"
+    fi
+done
+```
+
+Expected output:
+```
+Package: splurge_exceptions, Version: 2025.3.1
+Package: splurge_safe_io, Version: 2025.4.3
+Package: my_package, Version: ?
+  ⚠ Warning: Version not found
+```
+
+---
+
+### Example 14: Sync and Then Verify Versions
+
+Sync packages and verify they were synced with correct versions.
+
+```bash
+#!/bin/bash
+
+echo "Syncing packages..."
+splurge-vendor-sync \
+    --source /d/repos/splurge-exceptions \
+    --target /d/repos/my-project/my_package \
+    --package splurge_exceptions
+
+if [ $? -eq 0 ]; then
+    echo "✓ Sync successful"
+    echo ""
+    echo "Verifying versions..."
+    splurge-vendor-sync \
+        --target /d/repos/my-project/my_package \
+        --scan
+else
+    echo "✗ Sync failed"
+    exit 1
+fi
 ```
 
 ---

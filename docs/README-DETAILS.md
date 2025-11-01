@@ -50,7 +50,17 @@ The tool implements a **two-step synchronization process**:
 - Filters files based on configured extensions
 - Excludes build artifacts like `__pycache__`
 
-### 2. Selective File Filtering
+### 2. Version Scanning
+
+Scan vendored packages to extract version information:
+
+- **Extract version from Python files** using AST parsing for safety
+- **Search for custom version tags** (default: `__version__`)
+- **Check `__init__.py` first**, then fallback to `__main__.py`
+- **Display missing versions** with `?` marker for clear visibility
+- **Supports custom vendor directories** via `--vendor` flag
+
+### 3. Selective File Filtering
 
 Include only the file types your project needs:
 
@@ -59,20 +69,20 @@ Include only the file types your project needs:
 - **Semicolon-separated**: Format is `ext1;ext2;ext3` (without dots)
 - **Case-insensitive**: `.PY` and `.py` are treated identically
 
-### 3. Automatic Cleanup
+### 4. Automatic Cleanup
 
 Before syncing new files, the tool automatically:
 - Removes the entire old vendor package directory
 - Ensures no accidental file conflicts
 - Prevents version mismatches from lingering files
 
-### 4. Build Artifact Exclusion
+### 5. Build Artifact Exclusion
 
 The tool automatically excludes:
 - `__pycache__` directories (Python bytecode cache)
 - Any files within `__pycache__` directories
 
-### 5. Safe I/O Operations
+### 6. Safe I/O Operations
 
 Uses embedded vendor utilities for robust file operations:
 - **Deterministic newline normalization**: All newline variants (LF, CRLF, CR) are normalized to LF
@@ -80,7 +90,7 @@ Uses embedded vendor utilities for robust file operations:
 - **Proper error handling**: Clear, actionable error messages
 - **Thread-safe operations**: Safe for concurrent use
 
-### 6. Cross-Platform Compatibility
+### 7. Cross-Platform Compatibility
 
 Works seamlessly on:
 - **Windows**: Handles backslashes and drive letters correctly
@@ -390,6 +400,38 @@ splurge-vendor-sync \
 ```
 
 **Result**: All specified file types copied to target
+
+### Scenario 7: Scan Vendored Package Versions
+
+**Goal**: Extract version information from all vendored packages
+
+```bash
+# Default: scan for __version__
+splurge-vendor-sync \
+  --target /my-project/my_package \
+  --scan
+```
+
+**Output**:
+```
+splurge_exceptions 2025.3.1
+splurge_safe_io 2025.4.3
+custom_package ?
+```
+
+**Result**: Displays version for each vendored package, or `?` if not found
+
+### Scenario 8: Scan with Custom Version Tag
+
+**Goal**: Extract version information using a custom version variable name
+
+```bash
+splurge-vendor-sync \
+  --target /my-project/my_package \
+  --scan MY_VERSION
+```
+
+**Result**: Scans for `MY_VERSION` instead of `__version__` in each package
 
 ---
 

@@ -1,5 +1,17 @@
 ## Changelog
 
+## [2025.1.2] - 2024-11-01
+
+### Updated
+- Bumped version to `2025.1.2` in `__init__.py` and `pyproject.toml`.
+- Updated vendored `splurge-safe-io` to version `2025.4.3`.
+
+### Added
+- Implemented `--scan [VERSION-TAG]` CLI flag for scanning vendored packages and extracting version information using Python's AST module.
+- Created `splurge_vendor_sync/version_scanner.py` module with functions to extract version information from vendored packages.
+- Updated `splurge_vendor_sync/cli.py` to include the new `--scan` flag.
+- Added test cases for the version scanner module and CLI flag in `tests/test_version_scanner.py` and `tests/test_cli.py`.
+
 ## [2025.1.1] - 2024-10-30
 
 ### Updated
