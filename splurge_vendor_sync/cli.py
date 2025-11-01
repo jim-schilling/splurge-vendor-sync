@@ -28,6 +28,7 @@ def main() -> int:
         vendor=args.vendor,
         extensions=args.extensions,
         verbose=args.verbose,
+        scan=args.scan,
     )
 
 
@@ -45,19 +46,19 @@ def _create_parser() -> argparse.ArgumentParser:
         epilog="For more information, see: https://github.com/jim-schilling/splurge-vendor-sync",
     )
 
-    # Required arguments
+    # Arguments
     parser.add_argument(
         "--source",
         type=str,
-        required=True,
-        help="Path to the source directory containing the package to sync",
+        default=None,
+        help="Path to the source directory containing the package to sync (not required for --scan)",
         metavar="PATH",
     )
 
     parser.add_argument(
         "--target",
         type=str,
-        required=True,
+        default=None,
         help="Path to the target project directory",
         metavar="PATH",
     )
@@ -65,8 +66,8 @@ def _create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--package",
         type=str,
-        required=True,
-        help="Name of the package subdirectory to sync (e.g., splurge_exceptions)",
+        default=None,
+        help="Name of the package subdirectory to sync (not required for --scan)",
         metavar="PACKAGE",
     )
 
@@ -86,6 +87,16 @@ def _create_parser() -> argparse.ArgumentParser:
         default="py;json;yml;yaml;ini",
         help="Semicolon-separated file extensions to include (default: py;json;yml;yaml;ini)",
         metavar="EXT",
+    )
+
+    parser.add_argument(
+        "--scan",
+        type=str,
+        nargs="?",
+        const="__version__",
+        default=None,
+        help="Scan vendor directory for version tags (default tag: __version__). Can specify custom version tag.",
+        metavar="VERSION-TAG",
     )
 
     parser.add_argument(

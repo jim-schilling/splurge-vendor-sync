@@ -19,6 +19,7 @@ A powerful CLI tool for one-way vendor synchronization of Python libraries and a
 - **Selective file filtering**: Include only the file types you need (default: `.py`, `.json`, `.yml`, `.yaml`, `.ini`)
 - **Automatic cleanup**: Removes outdated vendor files before syncing new ones
 - **Exclusion support**: Automatically excludes `__pycache__` and other build artifacts
+- **Version scanning**: Scan vendored packages to extract version information with `--scan`
 - **Cross-platform**: Works on Windows, Linux, and macOS
 - **Safe I/O**: Uses deterministic newline normalization and secure path validation
 - **Clear error reporting**: Domain-based exception hierarchy with actionable error messages
@@ -70,6 +71,26 @@ splurge-vendor-sync \
   --package splurge_exceptions \
   --target /path/to/my-project/my_project \
   --vendor "_vendored"
+```
+
+### Scan Vendored Packages
+
+```bash
+# Scan for __version__ in all vendored packages
+splurge-vendor-sync \
+  --target /path/to/my-project/my_project \
+  --scan
+
+# Scan with custom version tag
+splurge-vendor-sync \
+  --target /path/to/my-project/my_project \
+  --scan MY_VERSION
+
+# Scan with custom vendor directory
+splurge-vendor-sync \
+  --target /path/to/my-project/my_project \
+  --vendor custom_vendor \
+  --scan
 ```
 
 ## Documentation

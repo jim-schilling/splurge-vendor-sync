@@ -23,6 +23,7 @@ def main(
     vendor: str = "_vendor",
     extensions: str | None = None,
     verbose: bool = False,
+    scan: str | None = None,
 ) -> int:
     """Main entry point for the sync operation.
 
@@ -33,6 +34,7 @@ def main(
         vendor: Vendor directory name (default: '_vendor')
         extensions: Semicolon-separated file extensions
         verbose: Enable verbose logging (default: False)
+        scan: If provided, scan vendor directory for version tags instead of syncing
 
     Returns:
         Exit code: 0 (success), 1 (runtime error), 2 (validation error)
@@ -44,15 +46,23 @@ def main(
         format="%(levelname)s: %(message)s",
     )
 
-    # Validate required parameters
+    # If scan mode is enabled, handle it separately
+    if scan is not None:
+        return _handle_scan(
+            target_path=target_path,
+            vendor=vendor,
+            version_tag=scan,
+        )
+
+    # Validate required parameters for sync mode
     if source_path is None:
-        print("Error: source_path is required", file=sys.stderr)
+        print("Error: source_path is required for sync mode", file=sys.stderr)
         return 2
     if target_path is None:
         print("Error: target_path is required", file=sys.stderr)
         return 2
     if package is None:
-        print("Error: package is required", file=sys.stderr)
+        print("Error: package is required for sync mode", file=sys.stderr)
         return 2
 
     try:
@@ -126,6 +136,53 @@ def _format_error(error: SplurgeVendorSyncError) -> str:
     message = str(error)
 
     return f"{error_type} ({error_code}): {message}"
+
+
+def _handle_scan(
+    target_path: str | Path | None,
+    vendor: str,
+    version_tag: str,
+) -> int:
+    """Handle the scan operation to find versions of vendored packages.
+
+    Args:
+        target_path: Path to the target project directory
+        vendor: Vendor directory name
+        version_tag: The version variable name to search for
+
+    Returns:
+        Exit code: 0 (success), 1 (runtime error), 2 (validation error)
+    """
+    from .version_scanner import format_version_output, scan_vendor_packages
+
+    if target_path is None:
+        print("Error: target_path is required for scan mode", file=sys.stderr)
+        return 2
+
+    try:
+        versions = scan_vendor_packages(
+            target_path=target_path,
+            vendor_dir=vendor,
+            version_tag=version_tag,
+        )
+
+        # Format and print the output
+        output = format_version_output(versions)
+        print(output)
+
+        return 0
+
+    except ValueError as e:
+        # Handle validation errors
+        print(f"Error: {str(e)}", file=sys.stderr)
+        return 2
+
+    except Exception as e:
+        # Handle unexpected errors
+        error_msg = f"Unexpected error during scan: {str(e)}"
+        print(error_msg, file=sys.stderr)
+        logger.error(f"Scan error: {e}", exc_info=True)
+        return 1
 
 
 if __name__ == "__main__":
