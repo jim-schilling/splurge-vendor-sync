@@ -148,7 +148,7 @@ except SplurgeVendorSyncTypeError as e:
 ```
 
 **Error Codes**:
-- `type-mismatch`: Parameter type doesn't match expected type
+- `splurge-vendor-sync.type.type-mismatch`: Parameter type doesn't match expected type
 
 ### SplurgeVendorSyncValueError
 
@@ -166,10 +166,10 @@ except SplurgeVendorSyncValueError as e:
 ```
 
 **Error Codes**:
-- `invalid-value`: Value is invalid or empty
-- `path-not-found`: Source or target path doesn't exist
-- `path-validation-failed`: Path failed security validation
-- `invalid-package`: Package name is invalid or empty
+- `splurge-vendor-sync.value.invalid-value`: Value is invalid or empty
+- `splurge-vendor-sync.value.path-not-found`: Source or target path doesn't exist
+- `splurge-vendor-sync.value.path-validation-failed`: Path failed security validation
+- `splurge-vendor-sync.value.invalid-package`: Package name is invalid or empty
 
 ### SplurgeVendorSyncOSError
 
@@ -187,14 +187,14 @@ except SplurgeVendorSyncOSError as e:
 ```
 
 **Error Codes**:
-- `permission-denied`: No read/write permission
-- `deletion-failed`: Failed to remove old vendor files
-- `copy-failed`: Failed to copy a file
-- `disk-full`: Disk space exhausted
+- `splurge-vendor-sync.os.permission-denied`: No read/write permission
+- `splurge-vendor-sync.os.deletion-failed`: Failed to remove old vendor files
+- `splurge-vendor-sync.os.copy-failed`: Failed to copy a file
+- `splurge-vendor-sync.os.disk-full`: Disk space exhausted
 
 ### SplurgeVendorSyncUnicodeError
 
-Raised when file encoding or decoding fails.
+Raised when file encoding or decoding fails (currently not raised in implementation, reserved for future use).
 
 ```python
 try:
@@ -207,23 +207,27 @@ except SplurgeVendorSyncUnicodeError as e:
     print(f"Encoding error: {e.error_code}")
 ```
 
-**Error Codes**:
-- `encoding-error`: File encoding problem
-- `decoding-error`: File decoding problem
+**Error Codes** (Reserved):
+- `splurge-vendor-sync.unicode.encoding-error`: File encoding problem
+- `splurge-vendor-sync.unicode.decoding-error`: File decoding problem
+
+**Note**: Unicode errors are not currently raised in sync operations. Encoding/decoding errors are caught as generic exceptions and re-raised as `SplurgeVendorSyncError` with `error_code="sync-failed"`.
 
 ### SplurgeVendorSyncRuntimeError
 
-Raised for unexpected runtime errors.
+Raised for unexpected runtime errors during sync operations.
 
 ```python
 try:
     result = sync_vendor(...)
-except SplurgeVendorSyncRuntimeError as e:
-    print(f"Unexpected runtime error: {e}")
+except SplurgeVendorSyncError as e:
+    print(f"Unexpected sync error: {e.error_code}")
 ```
 
 **Error Codes**:
-- `general`: Unclassified runtime error
+- `splurge-vendor-sync.sync-failed`: Unexpected error during synchronization
+
+**Note**: Unexpected errors caught during sync are raised as the base `SplurgeVendorSyncError` exception with `error_code="sync-failed"`, not as `SplurgeVendorSyncRuntimeError`. The `SplurgeVendorSyncRuntimeError` subclass is reserved for future use with domain `splurge-vendor-sync.runtime`.
 
 ---
 
@@ -459,6 +463,220 @@ if __name__ == "__main__":
 
 ---
 
+## Nested Vendor Scanning API
+
+### scan_vendor_packages_nested() Function
+
+```python
+def scan_vendor_packages_nested(
+    target_path: str | Path,
+    vendor_dir: str = "_vendor",
+    version_tag: str = "__version__",
+    depth: int = 0,
+    parent_package: str | None = None
+) -> list[NestedVersionInfo]:
+```
+
+#### Description
+
+Recursively scans vendor directories (including nested vendors) to extract version information with hierarchical structure. This function discovers transitive vendor dependencies at any nesting depth.
+
+#### Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `target_path` | `str` or `Path` | Yes | N/A | Absolute or relative path to the target project directory |
+| `vendor_dir` | `str` | No | `"_vendor"` | Name of the vendor subdirectory (default: `_vendor`) |
+| `version_tag` | `str` | No | `"__version__"` | Version variable name to search for |
+| `depth` | `int` | No | `0` | Current nesting depth (internal use for recursion) |
+| `parent_package` | `str` | No | `None` | Name of parent package (internal use for recursion) |
+
+#### Return Value - NestedVersionInfo Structure
+
+```python
+{
+    'package_name': str,                      # Name of the package
+    'version': str | None,                    # Version string or None if not found
+    'depth': int,                             # Nesting depth (0=top-level, 1+=nested)
+    'parent_package': str | None,             # Name of parent package containing this vendor
+    'nested_packages': list[NestedVersionInfo]  # Recursively nested packages
+}
+```
+
+#### Example Result Structure
+
+```python
+versions = scan_vendor_packages_nested("/path/to/project")
+
+# Result:
+[
+    {
+        'package_name': 'library_a',
+        'version': '1.0.0',
+        'depth': 0,
+        'parent_package': None,
+        'nested_packages': [
+            {
+                'package_name': 'library_b',
+                'version': '2.0.0',
+                'depth': 1,
+                'parent_package': 'library_a',
+                'nested_packages': [
+                    {
+                        'package_name': 'library_f',
+                        'version': '3.0.0',
+                        'depth': 2,
+                        'parent_package': 'library_b',
+                        'nested_packages': []
+                    },
+                    {
+                        'package_name': 'library_g',
+                        'version': '4.0.0',
+                        'depth': 2,
+                        'parent_package': 'library_b',
+                        'nested_packages': []
+                    }
+                ]
+            }
+        ]
+    }
+]
+```
+
+#### Raises
+
+| Exception | When |
+|-----------|------|
+| `ValueError` | Target path doesn't exist or vendor directory doesn't exist |
+
+#### Usage Examples
+
+```python
+from splurge_vendor_sync.version_scanner import (
+    scan_vendor_packages_nested,
+    format_nested_version_output
+)
+
+# Scan nested vendors
+versions = scan_vendor_packages_nested(
+    target_path="/path/to/my-project/my_package"
+)
+
+# Scan with custom version tag
+versions = scan_vendor_packages_nested(
+    target_path="/path/to/my-project/my_package",
+    version_tag="MY_VERSION"
+)
+
+# Scan with custom vendor directory
+versions = scan_vendor_packages_nested(
+    target_path="/path/to/my-project/my_package",
+    vendor_dir="custom_vendor"
+)
+```
+
+### format_nested_version_output() Function
+
+```python
+def format_nested_version_output(versions: list[NestedVersionInfo]) -> str:
+```
+
+#### Description
+
+Formats nested version information with hierarchy visualization using indentation. Each nesting level adds 2 spaces of indentation. Missing versions are displayed as `?`.
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `versions` | `list[NestedVersionInfo]` | Yes | List of nested version info dicts to format |
+
+#### Return Value
+
+Returns a formatted string with one package per line, indented according to nesting depth:
+
+```
+library_a 1.0.0
+  library_b 2.0.0
+    library_f 3.0.0
+    library_g 4.0.0
+library_c 1.5.0
+  library_d ?
+```
+
+#### Usage Examples
+
+```python
+from splurge_vendor_sync.version_scanner import (
+    scan_vendor_packages_nested,
+    format_nested_version_output
+)
+
+# Scan and format
+versions = scan_vendor_packages_nested("/path/to/project")
+output = format_nested_version_output(versions)
+print(output)
+
+# Output:
+# library_a 1.0.0
+#   library_b 2.0.0
+#     library_f 3.0.0
+#     library_g 4.0.0
+
+# Save to file
+with open("vendor_versions.txt", "w") as f:
+    f.write(format_nested_version_output(versions))
+
+# Check specific package in output
+if "  library_b 2.0.0" in output:
+    print("library_b is nested under a parent package")
+```
+
+### Example: Complete Nested Scanning Workflow
+
+```python
+from splurge_vendor_sync.version_scanner import (
+    scan_vendor_packages_nested,
+    format_nested_version_output
+)
+
+def report_vendor_hierarchy(project_path):
+    """Generate a report of all vendored packages with hierarchy."""
+    try:
+        # Scan nested vendors
+        versions = scan_vendor_packages_nested(
+            target_path=project_path
+        )
+        
+        # Generate formatted output
+        output = format_nested_version_output(versions)
+        
+        # Display
+        print("Vendor Package Hierarchy:")
+        print("=" * 50)
+        print(output)
+        print("=" * 50)
+        
+        # Optionally, analyze the structure
+        def count_packages(items, total=0):
+            for item in items:
+                total += 1
+                if item.get('nested_packages'):
+                    total = count_packages(item['nested_packages'], total)
+            return total
+        
+        total = count_packages(versions)
+        print(f"\nTotal packages: {total}")
+        
+    except ValueError as e:
+        print(f"Error: {e}")
+
+# Usage
+report_vendor_hierarchy("/path/to/project")
+```
+
+---
+
 ## Advanced Usage
 
 ### Validation Before Sync
@@ -648,9 +866,12 @@ except SplurgeVendorSyncError as e:
 
 | Issue | Solution |
 |-------|----------|
-| `SplurgeVendorSyncValueError: path-not-found` | Verify paths exist: `test -d /path` |
-| `SplurgeVendorSyncOSError: permission-denied` | Check permissions: `ls -ld /path` |
-| `SplurgeVendorSyncUnicodeError` | Check file encoding: `file -i myfile` |
+| `SplurgeVendorSyncTypeError: splurge-vendor-sync.type.type-mismatch` | Verify all parameters are correct types (Path or str) |
+| `SplurgeVendorSyncValueError: splurge-vendor-sync.value.path-not-found` | Verify paths exist: `test -d /path` |
+| `SplurgeVendorSyncValueError: splurge-vendor-sync.value.invalid-package` | Ensure package name is not empty |
+| `SplurgeVendorSyncOSError: splurge-vendor-sync.os.permission-denied` | Check permissions: `ls -ld /path` |
+| `SplurgeVendorSyncOSError: splurge-vendor-sync.os.disk-full` | Free disk space and retry |
+| `SplurgeVendorSyncError: splurge-vendor-sync.sync-failed` | Check logs for specific error details |
 | Files not copied | Verify extensions in `--ext` parameter |
 | Out of memory on large packages | Use streaming reader (not applicable to sync_vendor directly) |
 

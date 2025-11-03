@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 [![CI](https://github.com/jim-schilling/splurge-vendor-sync/actions/workflows/ci-quick-test.yml/badge.svg)](https://github.com/jim-schilling/splurge-vendor-sync/actions/workflows/ci-quick-test.yml)
-[![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen.svg)](https://github.com/jim-schilling/splurge-vendor-sync)
+[![Coverage](https://img.shields.io/badge/coverage-91%25-brightgreen.svg)](https://github.com/jim-schilling/splurge-vendor-sync)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![mypy](https://img.shields.io/badge/mypy-checked-black)](https://mypy-lang.org/)
 
@@ -20,6 +20,9 @@ A powerful CLI tool for one-way vendor synchronization of Python libraries and a
 - **Automatic cleanup**: Removes outdated vendor files before syncing new ones
 - **Exclusion support**: Automatically excludes `__pycache__` and other build artifacts
 - **Version scanning**: Scan vendored packages to extract version information with `--scan`
+  - Recursive nested vendor discovery: Detects transitive vendor dependencies at any depth
+  - Hierarchical output: Shows parent-child relationships between vendored packages
+  - Custom version tags: Search for `__version__` or custom version variable names
 - **Cross-platform**: Works on Windows, Linux, and macOS
 - **Safe I/O**: Uses deterministic newline normalization and secure path validation
 - **Clear error reporting**: Domain-based exception hierarchy with actionable error messages
@@ -76,7 +79,7 @@ splurge-vendor-sync \
 ### Scan Vendored Packages
 
 ```bash
-# Scan for __version__ in all vendored packages
+# Scan for __version__ in all vendored packages (including nested vendors)
 splurge-vendor-sync \
   --target /path/to/my-project/my_project \
   --scan
@@ -92,6 +95,19 @@ splurge-vendor-sync \
   --vendor custom_vendor \
   --scan
 ```
+
+**Scan Output with Nested Vendors:**
+
+The scanner displays hierarchical relationships when vendors are nested:
+
+```
+library-a 1.0.0
+  library-b 2.0.0
+    library-f 3.0.0
+    library-g 4.0.0
+```
+
+This shows that `library-b` is vendored under `library-a`, and both `library-f` and `library-g` are vendored under `library-b`.
 
 ## Documentation
 
@@ -150,9 +166,8 @@ pytest --cov=splurge_vendor_sync tests/
 ### Code Quality
 
 ```bash
-black splurge_vendor_sync/
-pylint splurge_vendor_sync/
-mypy splurge_vendor_sync/
+ruff .
+mypy .
 ```
 
 ## License

@@ -328,16 +328,26 @@ splurge-vendor-sync -h
 **Required**: No  
 **Default**: None (scan mode disabled)
 
-Scan vendor directory for version information instead of syncing packages.
+Scan vendor directory for version information instead of syncing packages. Recursively discovers nested vendors and displays results with hierarchical indentation.
 
 **Description**:
 - Enables scan mode instead of sync mode
-- Searches for version assignments in vendored packages
+- **Recursively scans nested vendor directories** to discover transitive dependencies
+- Searches for version assignments in all vendored packages at any depth
 - Default version tag is `__version__` when flag is used without argument
 - Checks `__init__.py` first, then fallback to `__main__.py`
 - Returns `?` for packages where version is not found
+- **Displays hierarchical structure** with indentation showing vendor relationships
 - Ignores `--source` and `--package` parameters when enabled
 - Respects custom vendor directory specified by `--vendor`
+
+**Hierarchical Output**:
+
+When packages are nested (vendors within vendors), indentation shows the relationship:
+- No indentation: Top-level packages
+- 2 spaces: Vendors under a top-level package
+- 4 spaces: Vendors under a nested package
+- And so on...
 
 **Usage Patterns**:
 
@@ -354,7 +364,7 @@ splurge-vendor-sync --target /path/to/project --vendor custom_vendor --scan MY_V
 
 **Examples**:
 ```bash
-# Default scan
+# Default scan (discovers nested vendors automatically)
 splurge-vendor-sync --target /d/projects/my-project/my_package --scan
 
 # Custom version tag
@@ -369,12 +379,21 @@ splurge-vendor-sync --target /d/projects/my-project/my_package --scan > versions
 
 **Output Format**:
 
-Each line contains package name and version (or `?` if not found):
-
+Flat structure (no nesting):
 ```
 splurge_exceptions 2025.3.1
 splurge_safe_io 2025.4.3
 custom_package ?
+```
+
+Hierarchical structure (with nesting):
+```
+library_a 1.0.0
+  library_b 2.0.0
+    library_f 3.0.0
+    library_g 4.0.0
+library_c 1.5.0
+  library_d ?
 ```
 
 **Error Handling**:
@@ -563,7 +582,7 @@ esac
 
 ### Example 9: Scan for Default Version Tag
 
-Scan vendored packages for `__version__`.
+Scan vendored packages for `__version__` (including nested vendors).
 
 ```bash
 splurge-vendor-sync \
@@ -573,16 +592,26 @@ splurge-vendor-sync \
 
 **What happens**:
 - Searches all packages in `_vendor/` directory
+- **Recursively scans nested `_vendor` directories** within each package
 - Looks for `__version__` assignment in each package's `__init__.py`
 - Falls back to `__main__.py` if not found in `__init__.py`
+- Displays hierarchical structure showing parent-child relationships
 - Prints package name and version, or `?` if not found
 
 **Expected output**:
 ```
 splurge_exceptions 2025.3.1
 splurge_safe_io 2025.4.3
-my_package ?
+library_a 1.0.0
+  library_b 2.0.0
+    library_f 3.0.0
+    library_g 4.0.0
 ```
+
+This shows:
+- `splurge_exceptions` and `splurge_safe_io` are top-level vendors
+- `library_b` is nested under `library_a`
+- `library_f` and `library_g` are nested under `library_b`
 
 ---
 
@@ -658,6 +687,126 @@ Package: splurge_exceptions, Version: 2025.3.1
 Package: splurge_safe_io, Version: 2025.4.3
 Package: my_package, Version: ?
   ⚠ Warning: Version not found
+```
+
+---
+
+### Example 14: Analyze Nested Vendor Hierarchy (NEW)
+
+Scan and analyze nested vendor relationships.
+
+```bash
+#!/bin/bash
+
+echo "Scanning vendor hierarchy..."
+splurge-vendor-sync --target /d/repos/my-project/my_package --scan > vendor_structure.txt
+
+echo ""
+echo "=== Vendor Structure ==="
+cat vendor_structure.txt
+
+echo ""
+echo "=== Analysis ==="
+top_level=$(grep -v "^  " vendor_structure.txt | grep -v "^    " | wc -l)
+nested_level_1=$(grep "^  " vendor_structure.txt | grep -v "^    " | wc -l)
+nested_level_2=$(grep "^    " vendor_structure.txt | wc -l)
+
+echo "Top-level packages: $top_level"
+echo "Nested level 1: $nested_level_1"
+echo "Nested level 2+: $nested_level_2"
+```
+
+Example output:
+```
+Scanning vendor hierarchy...
+
+=== Vendor Structure ===
+library_a 1.0.0
+  library_b 2.0.0
+    library_f 3.0.0
+    library_g 4.0.0
+library_c 1.5.0
+
+=== Analysis ===
+Top-level packages: 2
+Nested level 1: 1
+Nested level 2+: 2
+```
+
+---
+
+### Example 15: Scan and Sync Workflow (NEW)
+
+Scan before syncing to understand vendor structure, then perform sync.
+
+```bash
+#!/bin/bash
+
+PROJECT="/d/repos/my-project/my_package"
+
+echo "Step 1: Scan current vendor structure..."
+echo "========================================="
+splurge-vendor-sync --target "$PROJECT" --scan
+
+echo ""
+echo "Step 2: Sync new packages..."
+echo "============================"
+splurge-vendor-sync \
+    --source /d/repos/splurge-exceptions \
+    --target "$PROJECT" \
+    --package splurge_exceptions
+
+echo ""
+echo "Step 3: Verify new vendor structure..."
+echo "======================================"
+splurge-vendor-sync --target "$PROJECT" --scan
+
+echo ""
+echo "Done!"
+```
+
+---
+
+### Example 13: Scan and Parse with Bash
+
+Use scan results in a bash script to check for nested vendors.
+
+```bash
+#!/bin/bash
+
+# Check for nested vendors (indented lines indicate nesting)
+echo "Checking for nested vendors..."
+splurge-vendor-sync --target ./my_package --scan | grep "^  " | while read package version; do
+    # Remove leading spaces for display
+    pkg_name=$(echo "$package" | sed 's/^  *//')
+    echo "  Found nested vendor: $pkg_name (version: $version)"
+done
+
+# Count nesting levels
+echo ""
+echo "Nesting level analysis:"
+echo "Top-level vendors:"
+splurge-vendor-sync --target ./my_package --scan | grep -v "^  "
+
+echo "Nested vendors:"
+splurge-vendor-sync --target ./my_package --scan | grep "^  "
+```
+
+Expected output:
+```
+Checking for nested vendors...
+  Found nested vendor: library_b 2.0.0
+    Found nested vendor: library_f 3.0.0
+    Found nested vendor: library_g 4.0.0
+
+Nesting level analysis:
+Top-level vendors:
+library_a 1.0.0
+library_c 1.5.0
+Nested vendors:
+  library_b 2.0.0
+    library_f 3.0.0
+    library_g 4.0.0
 ```
 
 ---
@@ -836,7 +985,7 @@ ERROR: splurge.vendor_sync.value - path-not-found
 ### Problem: "Permission denied"
 
 ```
-ERROR: splurge.vendor_sync.os - permission-denied
+ERROR: splurge-vendor-sync.os - permission-denied
 ```
 
 **Solutions**:

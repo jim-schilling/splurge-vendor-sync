@@ -59,6 +59,40 @@ Scan vendored packages to extract version information:
 - **Check `__init__.py` first**, then fallback to `__main__.py`
 - **Display missing versions** with `?` marker for clear visibility
 - **Supports custom vendor directories** via `--vendor` flag
+- **Recursive nested vendor discovery**: Automatically discovers and scans nested vendor directories at any depth
+- **Hierarchical output**: Shows parent-child relationships when vendors are nested
+
+#### Nested Vendor Example
+
+If your project structure contains vendors within vendors:
+
+```
+my_project/
+  _vendor/
+    library-a/
+      __init__.py  (__version__ = "1.0.0")
+      _vendor/
+        library-b/
+          __init__.py  (__version__ = "2.0.0")
+          _vendor/
+            library-f/
+              __init__.py  (__version__ = "3.0.0")
+            library-g/
+              __init__.py  (__version__ = "4.0.0")
+```
+
+The scan output will show the hierarchy:
+
+```
+library-a 1.0.0
+  library-b 2.0.0
+    library-f 3.0.0
+    library-g 4.0.0
+```
+
+This clearly shows:
+- `library-b` is vendored **under** `library-a`
+- `library-f` and `library-g` are vendored **under** `library-b`
 
 ### 3. Selective File Filtering
 
@@ -274,16 +308,16 @@ SplurgeVendorSyncError (domain: splurge.vendor_sync)
 
 | Exception Type | Error Code | When It Occurs | Exit Code |
 |---|---|---|---|
-| `SplurgeVendorSyncTypeError` | `type-mismatch` | Parameter type is invalid | 2 |
-| `SplurgeVendorSyncValueError` | `invalid-value` | Parameter value is invalid | 2 |
-| `SplurgeVendorSyncValueError` | `path-not-found` | Source or target path doesn't exist | 2 |
-| `SplurgeVendorSyncValueError` | `invalid-package` | Package name is empty or invalid | 2 |
-| `SplurgeVendorSyncOSError` | `permission-denied` | No permission to read/write | 1 |
-| `SplurgeVendorSyncOSError` | `disk-full` | Disk space exhausted | 1 |
-| `SplurgeVendorSyncOSError` | `deletion-failed` | Failed to remove old vendor files | 1 |
-| `SplurgeVendorSyncOSError` | `copy-failed` | Failed to copy a file | 1 |
-| `SplurgeVendorSyncUnicodeError` | `encoding-error` | File encoding/decoding problem | 1 |
-| `SplurgeVendorSyncRuntimeError` | `general` | Unexpected runtime error | 1 |
+| `SplurgeVendorSyncTypeError` | `splurge-vendor-sync.type.type-mismatch` | Parameter type is invalid | 2 |
+| `SplurgeVendorSyncValueError` | `splurge-vendor-sync.value.invalid-value` | Parameter value is invalid | 2 |
+| `SplurgeVendorSyncValueError` | `splurge-vendor-sync.value.path-not-found` | Source or target path doesn't exist | 2 |
+| `SplurgeVendorSyncValueError` | `splurge-vendor-sync.value.invalid-package` | Package name is empty or invalid | 2 |
+| `SplurgeVendorSyncValueError` | `splurge-vendor-sync.value.path-validation-failed` | Path failed security validation | 2 |
+| `SplurgeVendorSyncOSError` | `splurge-vendor-sync.os.permission-denied` | No permission to read/write | 1 |
+| `SplurgeVendorSyncOSError` | `splurge-vendor-sync.os.disk-full` | Disk space exhausted | 1 |
+| `SplurgeVendorSyncOSError` | `splurge-vendor-sync.os.deletion-failed` | Failed to remove old vendor files | 1 |
+| `SplurgeVendorSyncOSError` | `splurge-vendor-sync.os.copy-failed` | Failed to copy a file | 1 |
+| `SplurgeVendorSyncError` | `splurge-vendor-sync.sync-failed` | Unexpected sync error | 1 |
 
 ### Exit Codes
 
@@ -473,7 +507,7 @@ ERROR: splurge.vendor_sync.value: path-not-found - File not found: /invalid/targ
 ### Problem: "Permission denied" (during sync)
 
 ```
-ERROR: splurge.vendor_sync.os: permission-denied - Permission error reading file
+ERROR: splurge-vendor-sync.os: permission-denied - Permission error reading file
 ```
 
 **Causes**:

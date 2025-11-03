@@ -1,5 +1,19 @@
 ## Changelog
 
+## [2025.1.3] - 2024-11-02
+
+### Updated
+- Bumped version to `2025.1.3` in `__init__.py` and `pyproject.toml`.
+- Updated `--scan` CLI flag documentation to reflect new default behavior of nested vendor scanning.
+
+### Added
+- Implemented nested vendor scanning feature:
+  - Created `NestedVersionInfo` TypedDict to represent hierarchical version information.
+  - Developed `scan_vendor_packages_nested()` function to recursively scan nested `_vendor` directories and build a nested structure of version info.
+  - Created `format_nested_version_output()` function to format and display the nested version information with indentation representing hierarchy.
+  - Updated CLI to use nested scanning by default when `--scan [VERSION-TAG]` is invoked.
+- Added comprehensive unit and integration tests to cover nested vendor scanning functionality.
+
 ## [2025.1.2] - 2024-11-01
 
 ### Updated

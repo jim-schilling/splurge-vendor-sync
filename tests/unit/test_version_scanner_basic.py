@@ -10,8 +10,10 @@ import pytest
 
 from splurge_vendor_sync.version_scanner import (
     extract_version_from_file,
+    format_nested_version_output,
     format_version_output,
     scan_vendor_packages,
+    scan_vendor_packages_nested,
 )
 
 
@@ -355,6 +357,465 @@ class TestFormatVersionOutput:
         assert lines[0] == "zebra 1.0.0"
         assert lines[1] == "apple 2.0.0"
         assert lines[2] == "banana ?"
+
+
+class TestScanVendorPackagesNested:
+    """Test nested vendor package scanning."""
+
+    def test_scan_nested_single_level(self, tmp_path: Path) -> None:
+        """Test scanning single level of nesting."""
+        target = tmp_path / "project"
+        target.mkdir()
+
+        vendor = target / "_vendor"
+        vendor.mkdir()
+
+        # Top-level package
+        pkg_a = vendor / "library_a"
+        pkg_a.mkdir()
+        (pkg_a / "__init__.py").write_text('__version__ = "1.0.0"\n')
+
+        versions = scan_vendor_packages_nested(target)
+
+        assert len(versions) == 1
+        assert versions[0]["package_name"] == "library_a"
+        assert versions[0]["version"] == "1.0.0"
+        assert versions[0]["depth"] == 0
+        assert versions[0]["parent_package"] is None
+        assert versions[0]["nested_packages"] == []
+
+    def test_scan_nested_two_levels(self, tmp_path: Path) -> None:
+        """Test scanning two levels of nesting."""
+        target = tmp_path / "project"
+        target.mkdir()
+
+        vendor = target / "_vendor"
+        vendor.mkdir()
+
+        # Top-level package with nested vendor
+        pkg_a = vendor / "library_a"
+        pkg_a.mkdir()
+        (pkg_a / "__init__.py").write_text('__version__ = "1.0.0"\n')
+
+        nested_vendor = pkg_a / "_vendor"
+        nested_vendor.mkdir()
+
+        pkg_b = nested_vendor / "library_b"
+        pkg_b.mkdir()
+        (pkg_b / "__init__.py").write_text('__version__ = "2.0.0"\n')
+
+        versions = scan_vendor_packages_nested(target)
+
+        assert len(versions) == 1
+        assert versions[0]["package_name"] == "library_a"
+        assert versions[0]["version"] == "1.0.0"
+        assert versions[0]["depth"] == 0
+        assert versions[0]["parent_package"] is None
+
+        assert len(versions[0]["nested_packages"]) == 1
+        nested = versions[0]["nested_packages"][0]
+        assert nested["package_name"] == "library_b"
+        assert nested["version"] == "2.0.0"
+        assert nested["depth"] == 1
+        assert nested["parent_package"] == "library_a"
+        assert nested["nested_packages"] == []
+
+    def test_scan_nested_three_levels(self, tmp_path: Path) -> None:
+        """Test scanning three levels of nesting."""
+        target = tmp_path / "project"
+        target.mkdir()
+
+        vendor = target / "_vendor"
+        vendor.mkdir()
+
+        # Level 1
+        pkg_a = vendor / "library_a"
+        pkg_a.mkdir()
+        (pkg_a / "__init__.py").write_text('__version__ = "1.0.0"\n')
+
+        # Level 2
+        vendor_b = pkg_a / "_vendor"
+        vendor_b.mkdir()
+        pkg_b = vendor_b / "library_b"
+        pkg_b.mkdir()
+        (pkg_b / "__init__.py").write_text('__version__ = "2.0.0"\n')
+
+        # Level 3
+        vendor_c = pkg_b / "_vendor"
+        vendor_c.mkdir()
+        pkg_c = vendor_c / "library_c"
+        pkg_c.mkdir()
+        (pkg_c / "__init__.py").write_text('__version__ = "3.0.0"\n')
+
+        versions = scan_vendor_packages_nested(target)
+
+        assert len(versions) == 1
+        assert versions[0]["package_name"] == "library_a"
+        assert versions[0]["depth"] == 0
+
+        level2 = versions[0]["nested_packages"]
+        assert len(level2) == 1
+        assert level2[0]["package_name"] == "library_b"
+        assert level2[0]["depth"] == 1
+        assert level2[0]["parent_package"] == "library_a"
+
+        level3 = level2[0]["nested_packages"]
+        assert len(level3) == 1
+        assert level3[0]["package_name"] == "library_c"
+        assert level3[0]["depth"] == 2
+        assert level3[0]["parent_package"] == "library_b"
+
+    def test_scan_nested_multiple_siblings(self, tmp_path: Path) -> None:
+        """Test scanning with multiple sibling packages at same level."""
+        target = tmp_path / "project"
+        target.mkdir()
+
+        vendor = target / "_vendor"
+        vendor.mkdir()
+
+        # Top-level package with nested vendor containing multiple packages
+        pkg_a = vendor / "library_a"
+        pkg_a.mkdir()
+        (pkg_a / "__init__.py").write_text('__version__ = "1.0.0"\n')
+
+        nested_vendor = pkg_a / "_vendor"
+        nested_vendor.mkdir()
+
+        # Multiple siblings
+        for name, version in [("library_b", "2.0.0"), ("library_c", "3.0.0")]:
+            pkg = nested_vendor / name
+            pkg.mkdir()
+            (pkg / "__init__.py").write_text(f'__version__ = "{version}"\n')
+
+        versions = scan_vendor_packages_nested(target)
+
+        assert len(versions) == 1
+        nested_packages = versions[0]["nested_packages"]
+        assert len(nested_packages) == 2
+
+        # Check sorting
+        assert nested_packages[0]["package_name"] == "library_b"
+        assert nested_packages[1]["package_name"] == "library_c"
+
+    def test_scan_nested_complex_hierarchy(self, tmp_path: Path) -> None:
+        """Test scanning complex hierarchy with multiple branches."""
+        target = tmp_path / "project"
+        target.mkdir()
+
+        vendor = target / "_vendor"
+        vendor.mkdir()
+
+        # Top level: library_a, library_d
+        pkg_a = vendor / "library_a"
+        pkg_a.mkdir()
+        (pkg_a / "__init__.py").write_text('__version__ = "1.0.0"\n')
+
+        pkg_d = vendor / "library_d"
+        pkg_d.mkdir()
+        (pkg_d / "__init__.py").write_text('__version__ = "4.0.0"\n')
+
+        # Under library_a: library_b, library_c
+        vendor_a = pkg_a / "_vendor"
+        vendor_a.mkdir()
+
+        pkg_b = vendor_a / "library_b"
+        pkg_b.mkdir()
+        (pkg_b / "__init__.py").write_text('__version__ = "2.0.0"\n')
+
+        pkg_c = vendor_a / "library_c"
+        pkg_c.mkdir()
+        (pkg_c / "__init__.py").write_text('__version__ = "3.0.0"\n')
+
+        # Under library_b: library_e
+        vendor_b = pkg_b / "_vendor"
+        vendor_b.mkdir()
+
+        pkg_e = vendor_b / "library_e"
+        pkg_e.mkdir()
+        (pkg_e / "__init__.py").write_text('__version__ = "5.0.0"\n')
+
+        versions = scan_vendor_packages_nested(target)
+
+        # Top level should have 2 packages (library_a, library_d)
+        assert len(versions) == 2
+        assert versions[0]["package_name"] == "library_a"
+        assert versions[1]["package_name"] == "library_d"
+        assert versions[1]["nested_packages"] == []
+
+        # library_a should have 2 nested packages (library_b, library_c)
+        lib_a_nested = versions[0]["nested_packages"]
+        assert len(lib_a_nested) == 2
+        assert lib_a_nested[0]["package_name"] == "library_b"
+        assert lib_a_nested[1]["package_name"] == "library_c"
+
+        # library_b should have 1 nested package (library_e)
+        lib_b_nested = lib_a_nested[0]["nested_packages"]
+        assert len(lib_b_nested) == 1
+        assert lib_b_nested[0]["package_name"] == "library_e"
+
+    def test_scan_nested_missing_versions(self, tmp_path: Path) -> None:
+        """Test scanning nested packages with missing versions."""
+        target = tmp_path / "project"
+        target.mkdir()
+
+        vendor = target / "_vendor"
+        vendor.mkdir()
+
+        pkg_a = vendor / "library_a"
+        pkg_a.mkdir()
+        (pkg_a / "__init__.py").write_text("# No version\n")
+
+        nested_vendor = pkg_a / "_vendor"
+        nested_vendor.mkdir()
+
+        pkg_b = nested_vendor / "library_b"
+        pkg_b.mkdir()
+        (pkg_b / "__init__.py").write_text('__version__ = "2.0.0"\n')
+
+        versions = scan_vendor_packages_nested(target)
+
+        assert versions[0]["version"] is None
+        assert versions[0]["nested_packages"][0]["version"] == "2.0.0"
+
+    def test_scan_nested_preserves_depth(self, tmp_path: Path) -> None:
+        """Test that depth is correctly tracked through hierarchy."""
+        target = tmp_path / "project"
+        target.mkdir()
+
+        vendor = target / "_vendor"
+        vendor.mkdir()
+
+        # Create 4-level deep nesting
+        current = vendor
+        for level in range(4):
+            pkg = current / f"library_level{level}"
+            pkg.mkdir()
+            (pkg / "__init__.py").write_text(f'__version__ = "{level}.0.0"\n')
+            current = pkg / "_vendor"
+            if level < 3:  # Don't create _vendor for the last level
+                current.mkdir()
+
+        versions = scan_vendor_packages_nested(target)
+
+        # Navigate through hierarchy and verify depths
+        assert versions[0]["depth"] == 0
+        level1 = versions[0]["nested_packages"][0]
+        assert level1["depth"] == 1
+
+        level2 = level1["nested_packages"][0]
+        assert level2["depth"] == 2
+
+        level3 = level2["nested_packages"][0]
+        assert level3["depth"] == 3
+
+
+class TestFormatNestedVersionOutput:
+    """Test formatting of nested version output."""
+
+    def test_format_nested_single_level(self) -> None:
+        """Test formatting single level (no nesting)."""
+        versions = [
+            {
+                "package_name": "library_a",
+                "version": "1.0.0",
+                "depth": 0,
+                "parent_package": None,
+                "nested_packages": [],
+            }
+        ]
+
+        output = format_nested_version_output(versions)
+        assert output == "library_a 1.0.0"
+
+    def test_format_nested_two_levels(self) -> None:
+        """Test formatting with indentation for nesting."""
+        versions = [
+            {
+                "package_name": "library_a",
+                "version": "1.0.0",
+                "depth": 0,
+                "parent_package": None,
+                "nested_packages": [
+                    {
+                        "package_name": "library_b",
+                        "version": "2.0.0",
+                        "depth": 1,
+                        "parent_package": "library_a",
+                        "nested_packages": [],
+                    }
+                ],
+            }
+        ]
+
+        output = format_nested_version_output(versions)
+        lines = output.split("\n")
+        assert lines[0] == "library_a 1.0.0"
+        assert lines[1] == "  library_b 2.0.0"
+
+    def test_format_nested_three_levels(self) -> None:
+        """Test formatting with three levels of nesting."""
+        versions = [
+            {
+                "package_name": "library_a",
+                "version": "1.0.0",
+                "depth": 0,
+                "parent_package": None,
+                "nested_packages": [
+                    {
+                        "package_name": "library_b",
+                        "version": "2.0.0",
+                        "depth": 1,
+                        "parent_package": "library_a",
+                        "nested_packages": [
+                            {
+                                "package_name": "library_c",
+                                "version": "3.0.0",
+                                "depth": 2,
+                                "parent_package": "library_b",
+                                "nested_packages": [],
+                            }
+                        ],
+                    }
+                ],
+            }
+        ]
+
+        output = format_nested_version_output(versions)
+        lines = output.split("\n")
+        assert lines[0] == "library_a 1.0.0"
+        assert lines[1] == "  library_b 2.0.0"
+        assert lines[2] == "    library_c 3.0.0"
+
+    def test_format_nested_multiple_siblings(self) -> None:
+        """Test formatting with multiple sibling packages."""
+        versions = [
+            {
+                "package_name": "library_a",
+                "version": "1.0.0",
+                "depth": 0,
+                "parent_package": None,
+                "nested_packages": [
+                    {
+                        "package_name": "library_b",
+                        "version": "2.0.0",
+                        "depth": 1,
+                        "parent_package": "library_a",
+                        "nested_packages": [],
+                    },
+                    {
+                        "package_name": "library_c",
+                        "version": "3.0.0",
+                        "depth": 1,
+                        "parent_package": "library_a",
+                        "nested_packages": [],
+                    },
+                ],
+            }
+        ]
+
+        output = format_nested_version_output(versions)
+        lines = output.split("\n")
+        assert lines[0] == "library_a 1.0.0"
+        assert lines[1] == "  library_b 2.0.0"
+        assert lines[2] == "  library_c 3.0.0"
+
+    def test_format_nested_complex_tree(self) -> None:
+        """Test formatting complex tree structure."""
+        versions = [
+            {
+                "package_name": "library_a",
+                "version": "1.0.0",
+                "depth": 0,
+                "parent_package": None,
+                "nested_packages": [
+                    {
+                        "package_name": "library_b",
+                        "version": "2.0.0",
+                        "depth": 1,
+                        "parent_package": "library_a",
+                        "nested_packages": [
+                            {
+                                "package_name": "library_d",
+                                "version": "4.0.0",
+                                "depth": 2,
+                                "parent_package": "library_b",
+                                "nested_packages": [],
+                            }
+                        ],
+                    },
+                    {
+                        "package_name": "library_c",
+                        "version": "3.0.0",
+                        "depth": 1,
+                        "parent_package": "library_a",
+                        "nested_packages": [],
+                    },
+                ],
+            }
+        ]
+
+        output = format_nested_version_output(versions)
+        lines = output.split("\n")
+        assert lines[0] == "library_a 1.0.0"
+        assert lines[1] == "  library_b 2.0.0"
+        assert lines[2] == "    library_d 4.0.0"
+        assert lines[3] == "  library_c 3.0.0"
+
+    def test_format_nested_missing_versions(self) -> None:
+        """Test formatting with missing versions."""
+        versions = [
+            {
+                "package_name": "library_a",
+                "version": None,
+                "depth": 0,
+                "parent_package": None,
+                "nested_packages": [
+                    {
+                        "package_name": "library_b",
+                        "version": "2.0.0",
+                        "depth": 1,
+                        "parent_package": "library_a",
+                        "nested_packages": [],
+                    }
+                ],
+            }
+        ]
+
+        output = format_nested_version_output(versions)
+        lines = output.split("\n")
+        assert lines[0] == "library_a ?"
+        assert lines[1] == "  library_b 2.0.0"
+
+    def test_format_nested_empty(self) -> None:
+        """Test formatting empty list."""
+        versions: list = []
+
+        output = format_nested_version_output(versions)
+        assert output == ""
+
+    def test_format_nested_multiple_top_level(self) -> None:
+        """Test formatting multiple top-level packages."""
+        versions = [
+            {
+                "package_name": "library_a",
+                "version": "1.0.0",
+                "depth": 0,
+                "parent_package": None,
+                "nested_packages": [],
+            },
+            {
+                "package_name": "library_b",
+                "version": "2.0.0",
+                "depth": 0,
+                "parent_package": None,
+                "nested_packages": [],
+            },
+        ]
+
+        output = format_nested_version_output(versions)
+        lines = output.split("\n")
+        assert lines[0] == "library_a 1.0.0"
+        assert lines[1] == "library_b 2.0.0"
 
 
 class TestIntegration:

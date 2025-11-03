@@ -16,7 +16,7 @@ from .exceptions import (
 from .main import main
 from .sync import sync_vendor
 
-__version__ = "2025.1.2"
+__version__ = "2025.1.3"
 
 __all__ = [
     "__version__",

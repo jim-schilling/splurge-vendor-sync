@@ -285,3 +285,139 @@ class TestE2EMainWrapper:
         exit_code = main(None, target, "test")
 
         assert exit_code == 2  # Validation error
+
+
+class TestE2ENestedVendorScanning:
+    """End-to-end tests for nested vendor scanning."""
+
+    def test_e2e_scan_nested_vendors(self, temp_workspace: tuple[Path, Path]) -> None:
+        """Test scanning with nested vendor directories."""
+        target, _ = temp_workspace
+
+        # Create nested vendor structure: library_a -> library_b
+        vendor = target / "_vendor"
+        vendor.mkdir()
+
+        pkg_a = vendor / "library_a"
+        pkg_a.mkdir()
+        (pkg_a / "__init__.py").write_text('__version__ = "1.0.0"\n')
+
+        vendor_a = pkg_a / "_vendor"
+        vendor_a.mkdir()
+
+        pkg_b = vendor_a / "library_b"
+        pkg_b.mkdir()
+        (pkg_b / "__init__.py").write_text('__version__ = "2.0.0"\n')
+
+        # Run scan via main
+        import io
+        from contextlib import redirect_stdout
+
+        captured_output = io.StringIO()
+        with redirect_stdout(captured_output):
+            exit_code = main(target_path=target, scan="__version__")
+
+        assert exit_code == 0
+        output = captured_output.getvalue().strip()
+
+        # Verify output shows hierarchy
+        assert "library_a 1.0.0" in output
+        assert "library_b 2.0.0" in output
+        # library_b should be indented (nested)
+        lines = output.split("\n")
+        assert any(line.startswith("  library_b") for line in lines)
+
+    def test_e2e_scan_deep_nesting(self, temp_workspace: tuple[Path, Path]) -> None:
+        """Test scanning with deep nesting levels."""
+        target, _ = temp_workspace
+
+        # Create 4-level deep nesting
+        vendor = target / "_vendor"
+        vendor.mkdir()
+
+        current = vendor
+        for level in range(4):
+            pkg = current / f"library_{level}"
+            pkg.mkdir()
+            (pkg / "__init__.py").write_text(f'__version__ = "{level}.0.0"\n')
+            current = pkg / "_vendor"
+            if level < 3:  # Don't create _vendor for the last level
+                current.mkdir()
+
+        import io
+        from contextlib import redirect_stdout
+
+        captured_output = io.StringIO()
+        with redirect_stdout(captured_output):
+            exit_code = main(target_path=target, scan="__version__")
+
+        assert exit_code == 0
+        output = captured_output.getvalue().strip()
+
+        # Verify all levels appear with increasing indentation
+        lines = output.split("\n")
+        assert lines[0].startswith("library_0") and not lines[0].startswith(" ")
+        assert any(line.startswith("  library_1") for line in lines)
+        assert any(line.startswith("    library_2") for line in lines)
+        assert any(line.startswith("      library_3") for line in lines)
+
+    def test_e2e_scan_multiple_branches(self, temp_workspace: tuple[Path, Path]) -> None:
+        """Test scanning with multiple vendor branches."""
+        target, _ = temp_workspace
+
+        # Create branching structure
+        vendor = target / "_vendor"
+        vendor.mkdir()
+
+        # Top level: library_a, library_d
+        pkg_a = vendor / "library_a"
+        pkg_a.mkdir()
+        (pkg_a / "__init__.py").write_text('__version__ = "1.0.0"\n')
+
+        pkg_d = vendor / "library_d"
+        pkg_d.mkdir()
+        (pkg_d / "__init__.py").write_text('__version__ = "4.0.0"\n')
+
+        # Under library_a: library_b, library_c
+        vendor_a = pkg_a / "_vendor"
+        vendor_a.mkdir()
+
+        pkg_b = vendor_a / "library_b"
+        pkg_b.mkdir()
+        (pkg_b / "__init__.py").write_text('__version__ = "2.0.0"\n')
+
+        pkg_c = vendor_a / "library_c"
+        pkg_c.mkdir()
+        (pkg_c / "__init__.py").write_text('__version__ = "3.0.0"\n')
+
+        # Under library_b: library_e
+        vendor_b = pkg_b / "_vendor"
+        vendor_b.mkdir()
+
+        pkg_e = vendor_b / "library_e"
+        pkg_e.mkdir()
+        (pkg_e / "__init__.py").write_text('__version__ = "5.0.0"\n')
+
+        import io
+        from contextlib import redirect_stdout
+
+        captured_output = io.StringIO()
+        with redirect_stdout(captured_output):
+            exit_code = main(target_path=target, scan="__version__")
+
+        assert exit_code == 0
+        output = captured_output.getvalue().strip()
+
+        # Verify all packages appear with correct hierarchy
+        lines = output.split("\n")
+
+        # Verify top-level packages
+        assert any("library_a 1.0.0" in line for line in lines)
+        assert any("library_d 4.0.0" in line for line in lines)
+
+        # Verify nested under library_a
+        assert any(line.startswith("  library_b") for line in lines)
+        assert any(line.startswith("  library_c") for line in lines)
+
+        # Verify nested under library_b (double indented)
+        assert any(line.startswith("    library_e") for line in lines)
