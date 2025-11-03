@@ -145,6 +145,9 @@ def _handle_scan(
 ) -> int:
     """Handle the scan operation to find versions of vendored packages.
 
+    Performs recursive scanning of nested vendor directories to show transitive
+    vendor dependencies with hierarchy visualization.
+
     Args:
         target_path: Path to the target project directory
         vendor: Vendor directory name
@@ -153,21 +156,21 @@ def _handle_scan(
     Returns:
         Exit code: 0 (success), 1 (runtime error), 2 (validation error)
     """
-    from .version_scanner import format_version_output, scan_vendor_packages
+    from .version_scanner import format_nested_version_output, scan_vendor_packages_nested
 
     if target_path is None:
         print("Error: target_path is required for scan mode", file=sys.stderr)
         return 2
 
     try:
-        versions = scan_vendor_packages(
+        versions = scan_vendor_packages_nested(
             target_path=target_path,
             vendor_dir=vendor,
             version_tag=version_tag,
         )
 
         # Format and print the output
-        output = format_version_output(versions)
+        output = format_nested_version_output(versions)
         print(output)
 
         return 0
